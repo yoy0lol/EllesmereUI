@@ -48,6 +48,18 @@ initFrame:SetScript("OnEvent", function(self)
 
     local pcall = pcall
     local pairs = pairs
+
+    -- Preview font setter: mirrors SetFSFont shadow logic for direct SetFont calls
+    local function SetPVFont(fs, fontPath, size, flags)
+        if not (fs and fs.SetFont) then return end
+        fs:SetFont(fontPath, size, flags)
+        if flags == "" then
+            fs:SetShadowOffset(1, -1)
+            fs:SetShadowColor(0, 0, 0, 1)
+        else
+            fs:SetShadowOffset(0, 0)
+        end
+    end
     local floor = math.floor
 
     ---------------------------------------------------------------------------
@@ -95,8 +107,8 @@ initFrame:SetScript("OnEvent", function(self)
                 cns = db.castNameSize or cns
                 cts = db.castTargetSize or cts
             end
-            if plate.castName then SetFSFont(plate.castName, cns, "OUTLINE") end
-            if plate.castTarget then SetFSFont(plate.castTarget, cts, "OUTLINE") end
+            if plate.castName then SetFSFont(plate.castName, cns, GetNPOutline()) end
+            if plate.castTarget then SetFSFont(plate.castTarget, cts, GetNPOutline()) end
             local auraStackSz = (db and db.auraStackTextSize) or ns.defaults.auraStackTextSize
             for i = 1, 4 do
                 if plate.debuffs[i] and plate.debuffs[i].count then SetFSFont(plate.debuffs[i].count, auraStackSz, "OUTLINE") end
@@ -455,7 +467,7 @@ initFrame:SetScript("OnEvent", function(self)
 
         -- Name text (anchored BOTTOM to health TOP, +4px gap, width 113)
         local nameFS = pf:CreateFontString(nil, "OVERLAY")
-        nameFS:SetFont(FONT_PATH, 11, GetNPOutline())
+        SetPVFont(nameFS, FONT_PATH, 11, GetNPOptOutline())
         nameFS:SetPoint("BOTTOM", health, "TOP", 0, 4)
         nameFS:SetWordWrap(false)
         nameFS:SetMaxLines(1)
@@ -464,13 +476,13 @@ initFrame:SetScript("OnEvent", function(self)
 
         -- Health percentage text (right-aligned inside health bar)
         local hpText = healthTextFrame:CreateFontString(nil, "OVERLAY")
-        hpText:SetFont(FONT_PATH, 10, GetNPOutline())
+        SetPVFont(hpText, FONT_PATH, 10, GetNPOptOutline())
         hpText:SetPoint("RIGHT", health, -2, 0)
         hpText:SetText(previewHpPct .. "%")
 
         -- Health number (centered, hidden by default)
         local hpNumber = healthTextFrame:CreateFontString(nil, "OVERLAY")
-        hpNumber:SetFont(FONT_PATH, 10, GetNPOutline())
+        SetPVFont(hpNumber, FONT_PATH, 10, GetNPOptOutline())
         hpNumber:SetPoint("CENTER", health, "CENTER", 0, 0)
         local hpNumStr = tostring(previewHpVal):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
         hpNumber:SetText(hpNumStr)
@@ -542,7 +554,7 @@ initFrame:SetScript("OnEvent", function(self)
 
         -- Cast name (left, width 70)
         castParts.nameFS = cast:CreateFontString(nil, "OVERLAY")
-        castParts.nameFS:SetFont(FONT_PATH, 10, GetNPOutline())
+        SetPVFont(castParts.nameFS, FONT_PATH, 10, GetNPOptOutline())
         castParts.nameFS:SetPoint("LEFT", cast, 5, 0)
         castParts.nameFS:SetJustifyH("LEFT")
         castParts.nameFS:SetWordWrap(false)
@@ -551,7 +563,7 @@ initFrame:SetScript("OnEvent", function(self)
 
         -- Cast target (right, dynamic width)
         castParts.targetFS = cast:CreateFontString(nil, "OVERLAY")
-        castParts.targetFS:SetFont(FONT_PATH, 10, GetNPOutline())
+        SetPVFont(castParts.targetFS, FONT_PATH, 10, GetNPOptOutline())
         castParts.targetFS:SetPoint("RIGHT", cast, -3, 0)
         castParts.targetFS:SetJustifyH("RIGHT")
         castParts.targetFS:SetWordWrap(false)
@@ -643,14 +655,14 @@ initFrame:SetScript("OnEvent", function(self)
             textFrame:SetFrameLevel(d:GetFrameLevel() + 2)
 
             d.durationText = textFrame:CreateFontString(nil, "OVERLAY")
-            d.durationText:SetFont(FONT_PATH, 11, GetNPOutline())
+            d.durationText:SetFont(FONT_PATH, 11, "OUTLINE")
             d.durationText:SetPoint("TOPLEFT", d, "TOPLEFT", -3, 4)
             d.durationText:SetJustifyH("LEFT")
             d.durationText:SetText(debuffData[i].text)
 
             -- Stack count text (bottom-right)
             d.stackText = textFrame:CreateFontString(nil, "OVERLAY")
-            d.stackText:SetFont(FONT_PATH, 11, GetNPOutline())
+            d.stackText:SetFont(FONT_PATH, 11, "OUTLINE")
             d.stackText:SetPoint("BOTTOMRIGHT", d, "BOTTOMRIGHT", 1, 1)
             d.stackText:SetJustifyH("RIGHT")
             if debuffData[i].stacks > 0 then
@@ -684,7 +696,7 @@ initFrame:SetScript("OnEvent", function(self)
             bfTextFrame:SetAllPoints()
             bfTextFrame:SetFrameLevel(bf:GetFrameLevel() + 2)
             bf.durationText = bfTextFrame:CreateFontString(nil, "OVERLAY")
-            bf.durationText:SetFont(FONT_PATH, 12, GetNPOutline())
+            bf.durationText:SetFont(FONT_PATH, 12, "OUTLINE")
             bf.durationText:SetPoint("CENTER", bf, "CENTER", 0, 0)
             bf.durationText:SetText(buffData[i].text)
             buffs[i] = bf
@@ -712,7 +724,7 @@ initFrame:SetScript("OnEvent", function(self)
             cfTextFrame:SetAllPoints()
             cfTextFrame:SetFrameLevel(cf:GetFrameLevel() + 2)
             cf.durationText = cfTextFrame:CreateFontString(nil, "OVERLAY")
-            cf.durationText:SetFont(FONT_PATH, 12, GetNPOutline())
+            cf.durationText:SetFont(FONT_PATH, 12, "OUTLINE")
             cf.durationText:SetPoint("CENTER", cf, "CENTER", 0, 0)
             cf.durationText:SetText(ccData[i].text)
             ccs[i] = cf
@@ -932,28 +944,28 @@ initFrame:SetScript("OnEvent", function(self)
             local function PlaceHealthInBar(element, anchor, point, xOff, yOff, fontSize, cr, cg, cb)
                 yOff = yOff or 0
                 if element == "healthPercent" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetParent(healthTextFrame)
                     hpText:SetText(pctStr)
                     hpText:SetPoint(point, health, anchor, xOff, yOff)
                     hpText:SetTextColor(cr, cg, cb, 1)
                     hpText:Show()
                 elseif element == "healthNumber" then
-                    hpNumber:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpNumber, fontPath, fontSize, npOutline)
                     hpNumber:SetParent(healthTextFrame)
                     hpNumber:SetText(hpNumStr)
                     hpNumber:SetPoint(point, health, anchor, xOff, yOff)
                     hpNumber:SetTextColor(cr, cg, cb, 1)
                     hpNumber:Show()
                 elseif element == "healthPctNum" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetParent(healthTextFrame)
                     hpText:SetText(pctStr .. " | " .. hpNumStr)
                     hpText:SetPoint(point, health, anchor, xOff, yOff)
                     hpText:SetTextColor(cr, cg, cb, 1)
                     hpText:Show()
                 elseif element == "healthNumPct" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetParent(healthTextFrame)
                     hpText:SetText(hpNumStr .. " | " .. pctStr)
                     hpText:SetPoint(point, health, anchor, xOff, yOff)
@@ -967,28 +979,28 @@ initFrame:SetScript("OnEvent", function(self)
                 txOff = txOff or 0
                 tyOff = tyOff or 0
                 if element == "healthPercent" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetText(pctStr)
                     hpText:SetParent(topTextFrame)
                     hpText:SetPoint("BOTTOM", health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)
                     hpText:SetTextColor(cr, cg, cb, 1)
                     hpText:Show()
                 elseif element == "healthNumber" then
-                    hpNumber:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpNumber, fontPath, fontSize, npOutline)
                     hpNumber:SetText(hpNumStr)
                     hpNumber:SetParent(topTextFrame)
                     hpNumber:SetPoint("BOTTOM", health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)
                     hpNumber:SetTextColor(cr, cg, cb, 1)
                     hpNumber:Show()
                 elseif element == "healthPctNum" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetText(pctStr .. " | " .. hpNumStr)
                     hpText:SetParent(topTextFrame)
                     hpText:SetPoint("BOTTOM", health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)
                     hpText:SetTextColor(cr, cg, cb, 1)
                     hpText:Show()
                 elseif element == "healthNumPct" then
-                    hpText:SetFont(fontPath, fontSize, npOutline)
+                    SetPVFont(hpText, fontPath, fontSize, npOutline)
                     hpText:SetText(hpNumStr .. " | " .. pctStr)
                     hpText:SetParent(topTextFrame)
                     hpText:SetPoint("BOTTOM", health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)
@@ -1001,7 +1013,7 @@ initFrame:SetScript("OnEvent", function(self)
             local function PlaceNameInBar(anchor, point, xOff, justify, txOff, tyOff, fontSize, cr, cg, cb, nameSlotKey)
                 txOff = txOff or 0
                 tyOff = tyOff or 0
-                nameFS:SetFont(fontPath, fontSize, npOutline)
+                SetPVFont(nameFS, fontPath, fontSize, npOutline)
                 nameFS:SetParent(healthTextFrame)
                 nameFS:SetPoint(point, health, anchor, xOff + txOff, tyOff)
                 nameFS:SetJustifyH(justify)
@@ -1031,7 +1043,7 @@ initFrame:SetScript("OnEvent", function(self)
             local topFontSz = DBVal("textSlotTopSize") or defaults.textSlotTopSize
             local topC = (DB() and DB().textSlotTopColor) or defaults.textSlotTopColor
             if slotTop == "enemyName" then
-                nameFS:SetFont(fontPath, topFontSz, npOutline)
+                SetPVFont(nameFS, fontPath, topFontSz, npOutline)
                 nameFS:SetParent(topTextFrame)
                 nameFS:SetPoint("BOTTOM", health, "TOP", topXOff, 4 + nameYOff + cpPush + topYOff)
                 nameFS:SetJustifyH("CENTER")
@@ -1090,8 +1102,8 @@ initFrame:SetScript("OnEvent", function(self)
             local cns = DBVal("castNameSize") or defaults.castNameSize
             local cts = DBVal("castTargetSize") or defaults.castTargetSize
             local cnc = (DB() and DB().castNameColor) or defaults.castNameColor
-            castParts.nameFS:SetFont(fontPath, cns, npOutline)
-            castParts.targetFS:SetFont(fontPath, cts, npOutline)
+            SetPVFont(castParts.nameFS, fontPath, cns, npOutline)
+            SetPVFont(castParts.targetFS, fontPath, cts, npOutline)
             castParts.nameFS:SetTextColor(cnc.r, cnc.g, cnc.b, 1)
             local useClassColor = defaults.castTargetClassColor
             local dbRef = DB()
@@ -1189,7 +1201,7 @@ initFrame:SetScript("OnEvent", function(self)
                     return
                 end
                 durText:Show()
-                durText:SetFont(fontPath, auraDurSz, npOutline)
+                durText:SetFont(fontPath, auraDurSz, "OUTLINE")
                 durText:SetTextColor(auraDurC.r, auraDurC.g, auraDurC.b, 1)
                 durText:ClearAllPoints()
                 if pos == "center" then
@@ -1227,10 +1239,10 @@ initFrame:SetScript("OnEvent", function(self)
                 else
                     debuffs[i]:Show()
                     debuffs[i]:SetSize(Snap(debuffSz), Snap(debuffSz))
-                    debuffs[i].durationText:SetFont(fontPath, auraDurSz, npOutline)
+                    debuffs[i].durationText:SetFont(fontPath, auraDurSz, "OUTLINE")
                     debuffs[i].durationText:SetTextColor(auraDurC.r, auraDurC.g, auraDurC.b, 1)
                     ApplyTimerPos(debuffs[i].durationText, debuffs[i], debuffTPos)
-                    debuffs[i].stackText:SetFont(fontPath, auraStackSz, npOutline)
+                    debuffs[i].stackText:SetFont(fontPath, auraStackSz, "OUTLINE")
                     debuffs[i].stackText:SetTextColor(auraStackC.r, auraStackC.g, auraStackC.b, 1)
                     PlaceInSlot(debuffs[i], debuffSlotVal, i, PV_CONST.DEBUFF_COUNT, debuffSz, debuffSz, debuffSpacing, debuffXOff, debuffYOff)
                 end
@@ -1243,7 +1255,7 @@ initFrame:SetScript("OnEvent", function(self)
                 else
                     buffs[i]:Show()
                     buffs[i]:SetSize(Snap(buffSz), Snap(buffSz))
-                    buffs[i].durationText:SetFont(fontPath, auraDurSz, npOutline)
+                    buffs[i].durationText:SetFont(fontPath, auraDurSz, "OUTLINE")
                     buffs[i].durationText:SetTextColor(auraDurC.r, auraDurC.g, auraDurC.b, 1)
                     ApplyTimerPos(buffs[i].durationText, buffs[i], buffTPos)
                     PlaceInSlot(buffs[i], buffSlotVal, i, PV_CONST.BUFF_COUNT, buffSz, buffSz, buffSpacing, buffXOff, buffYOff)
@@ -1257,7 +1269,7 @@ initFrame:SetScript("OnEvent", function(self)
                 else
                     ccs[i]:Show()
                     ccs[i]:SetSize(Snap(ccSz), Snap(ccSz))
-                    ccs[i].durationText:SetFont(fontPath, auraDurSz, npOutline)
+                    ccs[i].durationText:SetFont(fontPath, auraDurSz, "OUTLINE")
                     ccs[i].durationText:SetTextColor(auraDurC.r, auraDurC.g, auraDurC.b, 1)
                     ApplyTimerPos(ccs[i].durationText, ccs[i], ccTPos)
                     PlaceInSlot(ccs[i], ccSlotVal, i, PV_CONST.CC_COUNT, ccSz, ccSz, ccSpacing, ccXOff, ccYOff)
@@ -4604,7 +4616,7 @@ initFrame:SetScript("OnEvent", function(self)
                       set=function(v)
                         DB().castNameSize = v
                         for _, plate in pairs(plates) do
-                            if plate.castName then SetFSFont(plate.castName, v, "OUTLINE") end
+                            if plate.castName then SetFSFont(plate.castName, v, GetNPOutline()) end
                         end
                         UpdatePreview()
                       end },
@@ -4633,7 +4645,7 @@ initFrame:SetScript("OnEvent", function(self)
                       set=function(v)
                         DB().castTargetSize = v
                         for _, plate in pairs(plates) do
-                            if plate.castTarget then SetFSFont(plate.castTarget, v, "OUTLINE") end
+                            if plate.castTarget then SetFSFont(plate.castTarget, v, GetNPOutline()) end
                         end
                         UpdatePreview()
                       end },
@@ -5288,11 +5300,11 @@ initFrame:SetScript("OnEvent", function(self)
 
             local pctFS = textFrame:CreateFontString(nil, "OVERLAY")
             local initHpSz = 10
-            pctFS:SetFont(fontPath, initHpSz, GetNPOutline())
+            SetPVFont(pctFS, fontPath, initHpSz, GetNPOptOutline())
             pctFS:Hide()
 
             local numFS = textFrame:CreateFontString(nil, "OVERLAY")
-            numFS:SetFont(fontPath, initHpSz, GetNPOutline())
+            SetPVFont(numFS, fontPath, initHpSz, GetNPOptOutline())
             numFS:Hide()
 
             -- Full refresh: re-reads DB settings, repositions, updates text & values
@@ -5307,13 +5319,13 @@ initFrame:SetScript("OnEvent", function(self)
                     end
                 end
                 local curFont = (EllesmereUI and EllesmereUI.GetFontPath and EllesmereUI.GetFontPath("nameplates")) or DBVal("font")
-                local curOutline = GetNPOutline()
+                local curOutline = GetNPOptOutline()
 
                 -- Hide both FontStrings first
-                pctFS:SetFont(curFont, hpFS, curOutline)
+                SetPVFont(pctFS, curFont, hpFS, curOutline)
                 pctFS:ClearAllPoints()
                 pctFS:Hide()
-                numFS:SetFont(curFont, hpFS, curOutline)
+                SetPVFont(numFS, curFont, hpFS, curOutline)
                 numFS:ClearAllPoints()
                 numFS:Hide()
 
@@ -5481,7 +5493,7 @@ initFrame:SetScript("OnEvent", function(self)
             local cnc = (DB() and DB().castNameColor) or defaults.castNameColor
 
             local nameFS = cast:CreateFontString(nil, "OVERLAY")
-            nameFS:SetFont(fontPath, cns, GetNPOutline())
+            SetPVFont(nameFS, fontPath, cns, GetNPOptOutline())
             nameFS:SetPoint("LEFT", cast, "LEFT", 5, 0)
             nameFS:SetJustifyH("LEFT")
             nameFS:SetWordWrap(false)
@@ -5490,7 +5502,7 @@ initFrame:SetScript("OnEvent", function(self)
             nameFS:SetTextColor(cnc.r, cnc.g, cnc.b, 1)
 
             local targetFS = cast:CreateFontString(nil, "OVERLAY")
-            targetFS:SetFont(fontPath, cts, GetNPOutline())
+            SetPVFont(targetFS, fontPath, cts, GetNPOptOutline())
             targetFS:SetPoint("RIGHT", cast, "RIGHT", -3, 0)
             targetFS:SetJustifyH("RIGHT")
             targetFS:SetWordWrap(false)

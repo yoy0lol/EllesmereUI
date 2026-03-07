@@ -1173,6 +1173,25 @@ local function CaptureBlizzardDefaults()
                 end
             end
 
+            -- If alwaysShowButtons is off and the bar has no assigned abilities,
+            -- force it on so the bar stays visible after we take over.
+            -- Users with empty bars + hidden-empty-slots would otherwise lose
+            -- the bar entirely on first install.
+            if data.alwaysShowButtons == false and info.blizzBtnPrefix then
+                local numToCheck = data.numIcons or info.count or 12
+                local hasAny = false
+                for i = 1, numToCheck do
+                    local btn = _G[info.blizzBtnPrefix .. i]
+                    if btn and btn.action and HasAction(btn.action) then
+                        hasAny = true
+                        break
+                    end
+                end
+                if not hasAny then
+                    data.alwaysShowButtons = true
+                end
+            end
+
             -- Visibility (setting 5): 0=Always, 1=InCombat, 2=OutOfCombat, 3=Hidden
             -- Only bars 2-8 support this setting.
             -- IMPORTANT: A bar can be disabled entirely via Gameplay > Action Bars
@@ -2025,6 +2044,7 @@ function EAB:ApplyShapes()
 end
 
 function EAB:ApplyScaleForBar(barKey)
+    if InCombatLockdown() then return end
     local s = self.db.profile.bars[barKey]
     if not s then return end
     local frame = barFrames[barKey]
@@ -2167,8 +2187,8 @@ function EAB:ApplyFontsForBar(barKey)
                 if text == RANGE_INDICATOR or text == "\226\128\162" then text = "" end
                 hk:SetText(text)
                 hk:Show()
-                hk:SetFont(fontPath, kbSize, GetEABOutline())
-                if GetEABUseShadow() then hk:SetShadowOffset(1, -1) else hk:SetShadowOffset(0, 0) end
+                hk:SetFont(fontPath, kbSize, "OUTLINE")
+                hk:SetShadowOffset(0, 0)
                 hk:SetTextColor(kbColor.r, kbColor.g, kbColor.b)
                 hk:ClearAllPoints()
                 hk:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1 + kbOX, -3 + kbOY)
@@ -2180,8 +2200,8 @@ function EAB:ApplyFontsForBar(barKey)
         -- Count / charges text
         local ct = btn.Count
         if ct then
-            ct:SetFont(fontPath, ctSize, GetEABOutline())
-            if GetEABUseShadow() then ct:SetShadowOffset(1, -1) else ct:SetShadowOffset(0, 0) end
+            ct:SetFont(fontPath, ctSize, "OUTLINE")
+            ct:SetShadowOffset(0, 0)
             ct:SetTextColor(ctColor.r, ctColor.g, ctColor.b)
             ct:ClearAllPoints()
             ct:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", -1 + ctOX, 4 + ctOY)

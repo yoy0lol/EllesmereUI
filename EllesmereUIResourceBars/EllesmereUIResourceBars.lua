@@ -1,4 +1,4 @@
-ï»¿-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 --  EllesmereUIResourceBars.lua
 --  Custom class resource, health, and mana bar display
 --  Features: Health bar, primary resource bar (mana/rage/energy/etc),
@@ -35,6 +35,13 @@ local function GetRBOutline()
 end
 local function GetRBUseShadow()
     return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
+end
+local function SetRBFont(fs, font, size)
+    if not (fs and fs.SetFont) then return end
+    local f = GetRBOutline()
+    fs:SetFont(font, size, f)
+    if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+    else fs:SetShadowOffset(0, 0) end
 end
 
 -- PowerType enum values (Enum.PowerType)
@@ -227,7 +234,7 @@ end
 
 
 -------------------------------------------------------------------------------
---  Defaults â€” per-element scale, border, colors, text, alerts
+--  Defaults — per-element scale, border, colors, text, alerts
 -------------------------------------------------------------------------------
 local _, playerClassFile = UnitClass("player")
 local playerCC = CLASS_COLORS[playerClassFile] or { 0.15, 0.75, 0.30 }
@@ -411,7 +418,7 @@ local function ApplyBarOrientation(bar, orientation)
 end
 
 -------------------------------------------------------------------------------
---  Pixel-perfect border helper â€” supports variable thickness via size param
+--  Pixel-perfect border helper — supports variable thickness via size param
 --  Uses PixelUtil for positioning and disables pixel snapping AFTER
 --  SetColorTexture (WoW re-enables snapping on color/texture changes).
 -------------------------------------------------------------------------------
@@ -530,8 +537,7 @@ local function CreateStatusBar(parent, name, w, h, borderSize, borderR, borderG,
     textFrame:SetFrameLevel(bar:GetFrameLevel() + 2)
     textFrame:EnableMouse(false)
     local text = textFrame:CreateFontString(nil, "OVERLAY")
-    text:SetFont(GetRBFont(), 11, GetRBOutline())
-    if GetRBUseShadow() then text:SetShadowOffset(1, -1); text:SetShadowColor(0, 0, 0, 1) end
+    SetRBFont(text, GetRBFont(), 11)
     text:SetTextColor(1, 1, 1, 0.9)
     text:SetPoint("CENTER", textFrame, "CENTER")
     bar._text = text
@@ -931,7 +937,7 @@ end
 -- anchorPos: "left"/"right"/"top"/"bottom"
 -- frame: the bar frame to position
 -- offsetX, offsetY: additional offsets
--- growthDir: "UP", "DOWN", "LEFT", "RIGHT" â€” which direction the bar grows from the anchor edge
+-- growthDir: "UP", "DOWN", "LEFT", "RIGHT" — which direction the bar grows from the anchor edge
 -- growCentered: true = bar centered on anchor edge midpoint; false = bar corner at anchor edge midpoint
 -- Recursively set mouse passthrough on a frame and all its children.
 -- Stores original state on first call so it can be restored.
@@ -976,7 +982,7 @@ local function ApplyBarAnchor(frame, anchorKey, anchorPos, offsetX, offsetY, gro
     growthDir = growthDir or "UP"
     local centered = (growCentered ~= false)
 
-    -- Determine the frame's own anchor point â€” always the near edge center.
+    -- Determine the frame's own anchor point — always the near edge center.
     -- LayoutCDMBar-equivalent offset logic handles non-centered icon positioning.
     --   grow RIGHT -> near edge = LEFT   -> "LEFT"
     --   grow LEFT  -> near edge = RIGHT  -> "RIGHT"
@@ -1072,7 +1078,7 @@ local function ApplyBarAnchor(frame, anchorKey, anchorPos, offsetX, offsetY, gro
 end
 
 -------------------------------------------------------------------------------
---  BuildBars â€” applies per-element scale, border, colors, text positioning
+--  BuildBars — applies per-element scale, border, colors, text positioning
 -------------------------------------------------------------------------------
 
 local function BuildBars()
@@ -1111,7 +1117,7 @@ local function BuildBars()
                 hp.borderSize, hp.borderR, hp.borderG, hp.borderB, hp.borderA)
         end
         if hp.unlockPos and hp.unlockPos.point then
-            -- Position fully managed by unlock mode â€” no animations, just apply directly
+            -- Position fully managed by unlock mode — no animations, just apply directly
             local rp = hp.unlockPos.relPoint or hp.unlockPos.point
             local ow, oh = OrientedSize(hp.width, hp.height, hpOri)
             healthBar:SetScale(hp.scale)
@@ -1170,8 +1176,7 @@ local function BuildBars()
         -- Text positioning
         healthBar._text:ClearAllPoints()
         healthBar._text:SetPoint("CENTER", healthBar, "CENTER", hp.textXOffset, hp.textYOffset)
-        healthBar._text:SetFont(GetRBFont(), hp.textSize, GetRBOutline())
-        if GetRBUseShadow() then healthBar._text:SetShadowOffset(1, -1); healthBar._text:SetShadowColor(0, 0, 0, 1) end
+        SetRBFont(healthBar._text, GetRBFont(), hp.textSize)
         healthBar:Show()
         healthBar:SetAlpha(hp.barAlpha or 1)
         ApplyBarOrientation(healthBar, hpOri)
@@ -1188,7 +1193,7 @@ local function BuildBars()
                 pp.borderSize, pp.borderR, pp.borderG, pp.borderB, pp.borderA)
         end
         if pp.unlockPos and pp.unlockPos.point then
-            -- Position fully managed by unlock mode â€” no animations, just apply directly
+            -- Position fully managed by unlock mode — no animations, just apply directly
             local rp = pp.unlockPos.relPoint or pp.unlockPos.point
             local ow, oh = OrientedSize(pp.width, pp.height, ppOri)
             primaryBar:SetScale(pp.scale)
@@ -1246,8 +1251,7 @@ local function BuildBars()
         -- Text positioning
         primaryBar._text:ClearAllPoints()
         primaryBar._text:SetPoint("CENTER", primaryBar, "CENTER", pp.textXOffset, pp.textYOffset)
-        primaryBar._text:SetFont(GetRBFont(), pp.textSize, GetRBOutline())
-        if GetRBUseShadow() then primaryBar._text:SetShadowOffset(1, -1); primaryBar._text:SetShadowColor(0, 0, 0, 1) end
+        SetRBFont(primaryBar._text, GetRBFont(), pp.textSize)
         primaryBar:Show()
         primaryBar:SetAlpha(pp.barAlpha or 1)
         ApplyBarOrientation(primaryBar, ppOri)
@@ -1355,7 +1359,7 @@ local function BuildBars()
                 secondaryBar:GetStatusBarTexture():SetVertexColor(DARK_FILL_R, DARK_FILL_G, DARK_FILL_B, DARK_FILL_A)
                 secondaryBar._bg:SetColorTexture(DARK_BG_R, DARK_BG_G, DARK_BG_B, DARK_BG_A)
             elseif sp.classColored ~= false then
-                -- classColored is true (default) â€” use class color, or power color if no class color
+                -- classColored is true (default) — use class color, or power color if no class color
                 local cc = CLASS_COLORS[cachedClass]
                 if cc then
                     secondaryBar:GetStatusBarTexture():SetVertexColor(cc[1], cc[2], cc[3], sp.fillA or 1)
@@ -1364,7 +1368,7 @@ local function BuildBars()
                 end
                 secondaryBar._bg:SetColorTexture(sp.bgR, sp.bgG, sp.bgB, sp.bgA)
             else
-                -- classColored explicitly false â€” use custom fill color
+                -- classColored explicitly false — use custom fill color
                 secondaryBar:GetStatusBarTexture():SetVertexColor(sp.fillR, sp.fillG, sp.fillB, sp.fillA)
                 secondaryBar._bg:SetColorTexture(sp.bgR, sp.bgG, sp.bgB, sp.bgA)
             end
@@ -1376,7 +1380,7 @@ local function BuildBars()
                     runeFrames[i] = CreatePip(secondaryFrame, 20, pipH, i,
                         0, 0, 0, 0, 0)
                     local cdText = runeFrames[i]:CreateFontString(nil, "OVERLAY")
-                    cdText:SetFont(GetRBFont(), 9, GetRBOutline())
+                    SetRBFont(cdText, GetRBFont(), 9)
                     cdText:SetTextColor(1, 1, 1, 0.8)
                     cdText:SetPoint("CENTER")
                     runeFrames[i]._cdText = cdText
@@ -1504,8 +1508,7 @@ local function BuildBars()
             secondaryFrame._countText:ClearAllPoints()
             secondaryFrame._countText:SetParent(secondaryFrame._countTextOverlay)
             secondaryFrame._countText:SetPoint("CENTER", secondaryFrame, "CENTER", sp.textXOffset, sp.textYOffset)
-            secondaryFrame._countText:SetFont(GetRBFont(), sp.textSize, GetRBOutline())
-            if GetRBUseShadow() then secondaryFrame._countText:SetShadowOffset(1, -1); secondaryFrame._countText:SetShadowColor(0, 0, 0, 1) end
+            SetRBFont(secondaryFrame._countText, GetRBFont(), sp.textSize)
             secondaryFrame._countText:Show()
         elseif secondaryFrame._countText then
             secondaryFrame._countText:Hide()
@@ -1543,7 +1546,7 @@ local function UpdateHealthBar()
         local cc = CLASS_COLORS[cachedClass]
         if cc then r, g, b = cc[1], cc[2], cc[3] else r, g, b = 0.15, 0.75, 0.30 end
 
-        -- Low health warning removed â€” color stays class color
+        -- Low health warning removed — color stays class color
         healthBar:GetStatusBarTexture():SetVertexColor(r, g, b, 1)
     end
 
@@ -1642,12 +1645,12 @@ local function UpdateSecondaryResource()
     if sp.darkTheme then
         r, g, b = DARK_FILL_R, DARK_FILL_G, DARK_FILL_B
     elseif sp.classColored ~= false then
-        -- classColored is true (default) â€” use class color
+        -- classColored is true (default) — use class color
         local cc = CLASS_COLORS[cachedClass]
         if cc then r, g, b = cc[1], cc[2], cc[3] end
         a = sp.fillA or 1
     else
-        -- classColored explicitly false â€” custom fill
+        -- classColored explicitly false — custom fill
         r, g, b, a = sp.fillR, sp.fillG, sp.fillB, sp.fillA or 1
     end
 
@@ -1805,7 +1808,7 @@ local function UpdateSecondaryResource()
                     pip._fill:Hide()
                 end
             end
-            -- Count text â€” tostring handles secret values safely
+            -- Count text — tostring handles secret values safely
             if sp.showText and secondaryFrame._countText then
                 secondaryFrame._countText:SetText(tostring(cur))
             end
@@ -2232,16 +2235,14 @@ BuildCastBar = function()
 
         -- Spell name text
         local nameText = bar:CreateFontString(nil, "OVERLAY")
-        nameText:SetFont(GetRBFont(), 11, GetRBOutline())
-        if GetRBUseShadow() then nameText:SetShadowOffset(1, -1); nameText:SetShadowColor(0, 0, 0, 1) end
+        SetRBFont(nameText, GetRBFont(), 11)
         nameText:SetPoint("LEFT", bar, "LEFT", 4, 0)
         nameText:SetJustifyH("LEFT")
         castBarFrame._nameText = nameText
 
         -- Timer text
         local timerText = bar:CreateFontString(nil, "OVERLAY")
-        timerText:SetFont(GetRBFont(), 11, GetRBOutline())
-        if GetRBUseShadow() then timerText:SetShadowOffset(1, -1); timerText:SetShadowColor(0, 0, 0, 1) end
+        SetRBFont(timerText, GetRBFont(), 11)
         timerText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
         timerText:SetJustifyH("RIGHT")
         castBarFrame._timerText = timerText
@@ -2261,7 +2262,7 @@ BuildCastBar = function()
     -- Apply settings
     local w, h = cb.width, cb.height
     if cb.unlockPos and cb.unlockPos.point then
-        -- Position managed by unlock mode â€” only animate size changes
+        -- Position managed by unlock mode — only animate size changes
         local rp = cb.unlockPos.relPoint or cb.unlockPos.point
         local px, py = cb.unlockPos.x or 0, cb.unlockPos.y or 0
         local function ApplyCastUnlockTransform()
@@ -2405,8 +2406,8 @@ BuildCastBar = function()
     -- Timer text
     local timerText = castBarFrame._timerText
     if cb.showTimer then
-        timerText:SetFont(GetRBFont(), cb.timerSize or 11, GetRBOutline())
-        if GetRBUseShadow() then timerText:SetShadowOffset(1, -1); timerText:SetShadowColor(0, 0, 0, 1) end        timerText:ClearAllPoints()
+        SetRBFont(timerText, GetRBFont(), cb.timerSize or 11)
+        timerText:ClearAllPoints()
         timerText:SetPoint("RIGHT", bar, "RIGHT", -4 + (cb.timerX or 0), cb.timerY or 0)
         timerText:Show()
     else
@@ -2555,7 +2556,7 @@ OnChannelStart = function()
 end
 
 -- Called for UNIT_SPELLCAST_STOP only (normal cast completion).
--- Ignores the event if the castID doesn't match the active cast â€” this
+-- Ignores the event if the castID doesn't match the active cast — this
 -- prevents hiding the bar when a new cast has already started.
 local function OnCastComplete(eventCastID)
     if not castBarFrame then return end
@@ -2656,7 +2657,7 @@ OnEmpowerStart = function()
         end
     end
 
-    -- Stage pips (hash marks) â€” pixel-perfect positioning
+    -- Stage pips (hash marks) — pixel-perfect positioning
     local stages = UnitEmpoweredStagePercentages("player")
     if stages then
         local bar = castBarFrame._bar
@@ -2670,7 +2671,7 @@ OnEmpowerStart = function()
         local pixelSize = 1 / effectiveScale          -- 1 physical pixel in UI units
         local pipWidth = max(pixelSize, floor(2 * effectiveScale + 0.5) / effectiveScale) -- at least 1px, target ~2px
 
-        -- Position a pip at each stage boundary (skip the last â€” it's the bar end)
+        -- Position a pip at each stage boundary (skip the last — it's the bar end)
         local lastOffset = 0
         for i = 1, numStages - 1 do
             local pip = castBarFrame._pips[i]

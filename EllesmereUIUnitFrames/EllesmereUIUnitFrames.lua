@@ -559,13 +559,20 @@ local function GetSelectedFont(unitKey)
     return cachedFontPath
 end
 
-local function SetFSFont(fs, size, flags)
-  if not (fs and fs.SetFont) then return end
-  fs:SetFont(GetSelectedFont(), size or 12, flags or (EllesmereUI and EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag()) or "")
-end
-
 local function GetUFUseShadow()
     return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
+end
+
+local function SetFSFont(fs, size, flags)
+  if not (fs and fs.SetFont) then return end
+  local f = flags or (EllesmereUI and EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag()) or ""
+  fs:SetFont(GetSelectedFont(), size or 12, f)
+  if f == "" then
+    fs:SetShadowOffset(1, -1)
+    fs:SetShadowColor(0, 0, 0, 1)
+  else
+    fs:SetShadowOffset(0, 0)
+  end
 end
 
 -- Disable WoW's automatic pixel snapping on a texture (prevents sub-pixel jitter)
@@ -1196,21 +1203,18 @@ local function CreateBottomTextBar(frame, unit, settings, anchorFrame, xOffset, 
     SetFSFont(leftFS, settings.btbLeftSize or 11)
     leftFS:SetWordWrap(false)
     leftFS:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftFS:SetShadowOffset(1, -1) else leftFS:SetShadowOffset(0, 0) end
     btb.LeftText = leftFS
 
     local rightFS = textOvr:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightFS, settings.btbRightSize or 11)
     rightFS:SetWordWrap(false)
     rightFS:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightFS:SetShadowOffset(1, -1) else rightFS:SetShadowOffset(0, 0) end
     btb.RightText = rightFS
 
     local centerFS = textOvr:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerFS, settings.btbCenterSize or 11)
     centerFS:SetWordWrap(false)
     centerFS:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerFS:SetShadowOffset(1, -1) else centerFS:SetShadowOffset(0, 0) end
     btb.CenterText = centerFS
 
     btb._textOverlay = textOvr
@@ -1794,7 +1798,6 @@ local function CreatePowerBar(frame, unit, settings)
     ppTextOvr:SetFrameLevel(power:GetFrameLevel() + 2)
     local ppFS = ppTextOvr:CreateFontString(nil, "OVERLAY")
     SetFSFont(ppFS, settings.powerPercentSize or 9)
-    if GetUFUseShadow() then ppFS:SetShadowOffset(1, -1) else ppFS:SetShadowOffset(0, 0) end
     ppFS:Hide()
     power._ppFS = ppFS
     power._ppTextOvr = ppTextOvr
@@ -2084,7 +2087,6 @@ local function CreateCastBar(frame, unit, settings)
     text:SetPoint("LEFT", castbar, "LEFT", 5, 1)
     text:SetJustifyH("LEFT")
     text:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then text:SetShadowOffset(1, -1) else text:SetShadowOffset(0, 0) end
     castbar.Text = text
 
     local time = castbar:CreateFontString(nil, "OVERLAY")
@@ -2092,7 +2094,6 @@ local function CreateCastBar(frame, unit, settings)
     time:SetPoint("RIGHT", castbar, "RIGHT", -5, 0)
     time:SetJustifyH("RIGHT")
     time:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then time:SetShadowOffset(1, -1) else time:SetShadowOffset(0, 0) end
     castbar.Time = time
 
     local shield = castbar:CreateTexture(nil, "OVERLAY")
@@ -2569,21 +2570,18 @@ local function StyleFullFrame(frame, unit)
     SetFSFont(leftText, lts)
     leftText:SetWordWrap(false)
     leftText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftText:SetShadowOffset(1, -1) else leftText:SetShadowOffset(0, 0) end
     frame.LeftText = leftText
 
     local rightText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightText, rts)
     rightText:SetWordWrap(false)
     rightText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightText:SetShadowOffset(1, -1) else rightText:SetShadowOffset(0, 0) end
     frame.RightText = rightText
 
     local centerText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerText, cts)
     centerText:SetWordWrap(false)
     centerText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerText:SetShadowOffset(1, -1) else centerText:SetShadowOffset(0, 0) end
     frame.CenterText = centerText
 
     -- Backward compat aliases
@@ -2773,21 +2771,18 @@ local function StyleFocusFrame(frame, unit)
     SetFSFont(leftText, lts)
     leftText:SetWordWrap(false)
     leftText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftText:SetShadowOffset(1, -1) else leftText:SetShadowOffset(0, 0) end
     frame.LeftText = leftText
 
     local rightText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightText, rts)
     rightText:SetWordWrap(false)
     rightText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightText:SetShadowOffset(1, -1) else rightText:SetShadowOffset(0, 0) end
     frame.RightText = rightText
 
     local centerText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerText, cts)
     centerText:SetWordWrap(false)
     centerText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerText:SetShadowOffset(1, -1) else centerText:SetShadowOffset(0, 0) end
     frame.CenterText = centerText
 
     -- Backward compat aliases
@@ -2944,21 +2939,18 @@ local function StyleSimpleFrame(frame, unit)
     SetFSFont(leftText, ts)
     leftText:SetWordWrap(false)
     leftText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftText:SetShadowOffset(1, -1) else leftText:SetShadowOffset(0, 0) end
     frame.LeftText = leftText
 
     local rightText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightText, ts)
     rightText:SetWordWrap(false)
     rightText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightText:SetShadowOffset(1, -1) else rightText:SetShadowOffset(0, 0) end
     frame.RightText = rightText
 
     local centerText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerText, ts)
     centerText:SetWordWrap(false)
     centerText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerText:SetShadowOffset(1, -1) else centerText:SetShadowOffset(0, 0) end
     frame.CenterText = centerText
 
     -- Backward compat aliases
@@ -3088,21 +3080,18 @@ local function StylePetFrame(frame, unit)
     SetFSFont(leftText, ts)
     leftText:SetWordWrap(false)
     leftText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftText:SetShadowOffset(1, -1) else leftText:SetShadowOffset(0, 0) end
     frame.LeftText = leftText
 
     local rightText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightText, ts)
     rightText:SetWordWrap(false)
     rightText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightText:SetShadowOffset(1, -1) else rightText:SetShadowOffset(0, 0) end
     frame.RightText = rightText
 
     local centerText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerText, ts)
     centerText:SetWordWrap(false)
     centerText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerText:SetShadowOffset(1, -1) else centerText:SetShadowOffset(0, 0) end
     frame.CenterText = centerText
 
     frame.NameText = leftText
@@ -3213,21 +3202,18 @@ local function StyleBossFrame(frame, unit)
     SetFSFont(leftText, bts)
     leftText:SetWordWrap(false)
     leftText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then leftText:SetShadowOffset(1, -1) else leftText:SetShadowOffset(0, 0) end
     frame.LeftText = leftText
 
     local rightText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(rightText, bts)
     rightText:SetWordWrap(false)
     rightText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then rightText:SetShadowOffset(1, -1) else rightText:SetShadowOffset(0, 0) end
     frame.RightText = rightText
 
     local centerText = textOverlay:CreateFontString(nil, "OVERLAY")
     SetFSFont(centerText, bts)
     centerText:SetWordWrap(false)
     centerText:SetTextColor(1, 1, 1)
-    if GetUFUseShadow() then centerText:SetShadowOffset(1, -1) else centerText:SetShadowOffset(0, 0) end
     frame.CenterText = centerText
 
     frame.NameText = leftText
@@ -4853,7 +4839,10 @@ local function ReloadFrames()
             local function SetMiniFont(fs, sz)
                 if not fs or not fs.SetFont then return end
                 if isMiniFrame then
-                    fs:SetFont(donorFontPath, sz or 12, (EllesmereUI and EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag()) or "")
+                    local f = (EllesmereUI and EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag()) or ""
+                    fs:SetFont(donorFontPath, sz or 12, f)
+                    if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+                    else fs:SetShadowOffset(0, 0) end
                 else
                     SetFSFont(fs, sz)
                 end
@@ -5074,7 +5063,6 @@ function InitializeFrames()
             local restText = restHolder:CreateFontString(nil, "OVERLAY")
             SetFSFont(restText, 9)
             restText:SetTextColor(1, 1, 1)
-            if GetUFUseShadow() then restText:SetShadowOffset(1, -1) else restText:SetShadowOffset(0, 0) end
             restText:SetText("ZZZ")
             restText:SetPoint("TOPLEFT", pf.Health, "TOPLEFT", 3, -2)
             restText:Hide()

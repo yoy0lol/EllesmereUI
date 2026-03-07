@@ -13,6 +13,13 @@ local PP = EllesmereUI.PP
 
 local function GetCDMOutline() return EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag() or "" end
 local function GetCDMUseShadow() return EllesmereUI.GetFontUseShadow and EllesmereUI.GetFontUseShadow() or true end
+local function SetCDMFont(fs, font, size)
+    if not (fs and fs.SetFont) then return end
+    local f = GetCDMOutline()
+    fs:SetFont(font, size, f)
+    if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+    else fs:SetShadowOffset(0, 0) end
+end
 
 -- Snap a value to the nearest physical pixel at a given bar scale
 local function SnapForScale(x, barScale)
@@ -1678,6 +1685,13 @@ local function GetCDMUseShadow()
     end
     return false
 end
+local function SetBlizzCDMFont(fs, font, size)
+    if not (fs and fs.SetFont) then return end
+    local f = GetCDMOutline()
+    fs:SetFont(font, size, f)
+    if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+    else fs:SetShadowOffset(0, 0) end
+end
 
 -- Blizzard CDM frame names
 local BLIZZ_CDM_FRAMES = {
@@ -2560,8 +2574,8 @@ local function CreateCDMIcon(barKey, index)
 
     -- Charge count text
     local chargeText = textOverlay:CreateFontString(nil, "OVERLAY")
-    chargeText:SetFont(GetCDMFont(), barData.stackCountSize or 11, GetCDMOutline())
-    if GetCDMUseShadow() then chargeText:SetShadowOffset(1, -1) else chargeText:SetShadowOffset(0, 0) end
+    chargeText:SetFont(GetCDMFont(), barData.stackCountSize or 11, "OUTLINE")
+    chargeText:SetShadowOffset(0, 0)
     chargeText:SetPoint("BOTTOMRIGHT", textOverlay, "BOTTOMRIGHT", barData.stackCountX or 0, (barData.stackCountY or 0) + 2)
     chargeText:SetJustifyH("RIGHT")
     chargeText:SetTextColor(barData.stackCountR or 1, barData.stackCountG or 1, barData.stackCountB or 1)
@@ -2570,8 +2584,8 @@ local function CreateCDMIcon(barKey, index)
 
     -- Stack count text
     local stackText = textOverlay:CreateFontString(nil, "OVERLAY")
-    stackText:SetFont(GetCDMFont(), barData.stackCountSize or 11, GetCDMOutline())
-    if GetCDMUseShadow() then stackText:SetShadowOffset(1, -1) else stackText:SetShadowOffset(0, 0) end
+    stackText:SetFont(GetCDMFont(), barData.stackCountSize or 11, "OUTLINE")
+    stackText:SetShadowOffset(0, 0)
     stackText:SetPoint("BOTTOMRIGHT", textOverlay, "BOTTOMRIGHT", barData.stackCountX or 0, (barData.stackCountY or 0) + 2)
     stackText:SetJustifyH("RIGHT")
     stackText:SetTextColor(barData.stackCountR or 1, barData.stackCountG or 1, barData.stackCountB or 1)
@@ -2590,8 +2604,8 @@ local function CreateCDMIcon(barKey, index)
 
     -- Keybind text overlay (top-left corner of icon)
     local keybindText = textOverlay:CreateFontString(nil, "OVERLAY")
-    keybindText:SetFont(GetCDMFont(), barData.keybindSize or 10, GetCDMOutline())
-    if GetCDMUseShadow() then keybindText:SetShadowOffset(1, -1) else keybindText:SetShadowOffset(0, 0) end
+    keybindText:SetFont(GetCDMFont(), barData.keybindSize or 10, "OUTLINE")
+    keybindText:SetShadowOffset(0, 0)
     keybindText:SetPoint("TOPLEFT", textOverlay, "TOPLEFT", barData.keybindOffsetX or 2, barData.keybindOffsetY or -2)
     keybindText:SetJustifyH("LEFT")
     keybindText:SetTextColor(barData.keybindR or 1, barData.keybindG or 1, barData.keybindB or 1, barData.keybindA or 0.9)
@@ -3382,16 +3396,16 @@ local function RefreshCDMIconAppearance(barKey)
         end
         -- Update charge text font/position
         if icon._chargeText then
-            icon._chargeText:SetFont(GetCDMFont(), barData.stackCountSize or 11, GetCDMOutline())
-            if GetCDMUseShadow() then icon._chargeText:SetShadowOffset(1, -1) else icon._chargeText:SetShadowOffset(0, 0) end
+            icon._chargeText:SetFont(GetCDMFont(), barData.stackCountSize or 11, "OUTLINE")
+            icon._chargeText:SetShadowOffset(0, 0)
             icon._chargeText:ClearAllPoints()
             icon._chargeText:SetPoint("BOTTOMRIGHT", barData.stackCountX or 0, (barData.stackCountY or 0) + 2)
             icon._chargeText:SetTextColor(barData.stackCountR or 1, barData.stackCountG or 1, barData.stackCountB or 1)
         end
         -- Update stack count text font/position/color
         if icon._stackText then
-            icon._stackText:SetFont(GetCDMFont(), barData.stackCountSize or 11, GetCDMOutline())
-            if GetCDMUseShadow() then icon._stackText:SetShadowOffset(1, -1) else icon._stackText:SetShadowOffset(0, 0) end
+            icon._stackText:SetFont(GetCDMFont(), barData.stackCountSize or 11, "OUTLINE")
+            icon._stackText:SetShadowOffset(0, 0)
             icon._stackText:ClearAllPoints()
             icon._stackText:SetPoint("BOTTOMRIGHT", barData.stackCountX or 0, (barData.stackCountY or 0) + 2)
             icon._stackText:SetTextColor(barData.stackCountR or 1, barData.stackCountG or 1, barData.stackCountB or 1)
@@ -3399,8 +3413,8 @@ local function RefreshCDMIconAppearance(barKey)
 
         -- Update keybind text style
         if icon._keybindText then
-            icon._keybindText:SetFont(GetCDMFont(), barData.keybindSize or 10, GetCDMOutline())
-            if GetCDMUseShadow() then icon._keybindText:SetShadowOffset(1, -1) else icon._keybindText:SetShadowOffset(0, 0) end
+            icon._keybindText:SetFont(GetCDMFont(), barData.keybindSize or 10, "OUTLINE")
+            icon._keybindText:SetShadowOffset(0, 0)
             icon._keybindText:ClearAllPoints()
             icon._keybindText:SetPoint("TOPLEFT", icon._textOverlay, "TOPLEFT", barData.keybindOffsetX or 2, barData.keybindOffsetY or -2)
             icon._keybindText:SetTextColor(barData.keybindR or 1, barData.keybindG or 1, barData.keybindB or 1, barData.keybindA or 0.9)
@@ -4195,7 +4209,7 @@ BuildAllCDMBars = function()
                     for ri = 1, icon._cooldown:GetNumRegions() do
                         local region = select(ri, icon._cooldown:GetRegions())
                         if region and region.GetObjectType and region:GetObjectType() == "FontString" then
-                            region:SetFont(fontPath, fontSize, GetCDMOutline())
+                            SetBlizzCDMFont(region, fontPath, fontSize)
                             break
                         end
                     end

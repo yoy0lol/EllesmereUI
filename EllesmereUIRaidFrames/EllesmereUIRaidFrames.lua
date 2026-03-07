@@ -241,6 +241,12 @@ local function SetFSFont(fs, font, size, flags)
         resolvedFlags = (EllesmereUI and EllesmereUI.GetFontOutlineFlag and EllesmereUI.GetFontOutlineFlag()) or "OUTLINE"
     end
     fs:SetFont(resolvedFont, size or 10, resolvedFlags)
+    if resolvedFlags == "" then
+        fs:SetShadowOffset(1, -1)
+        fs:SetShadowColor(0, 0, 0, 1)
+    else
+        fs:SetShadowOffset(0, 0)
+    end
 end
 ns.SetFSFont = SetFSFont
 

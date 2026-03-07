@@ -152,6 +152,13 @@ end
 local function GetCDMUseShadow()
     return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
 end
+local function SetCDMFont(fs, font, size)
+    if not (fs and fs.SetFont) then return end
+    local f = GetCDMOutline()
+    fs:SetFont(font, size, f)
+    if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+    else fs:SetShadowOffset(0, 0) end
+end
 
 local function CreateTrackedBuffBarFrame(parent, idx)
     local bar = CreateFrame("StatusBar", "ECME_TBB" .. idx, parent)
@@ -181,8 +188,7 @@ local function CreateTrackedBuffBarFrame(parent, idx)
 
     -- Timer text
     local timerText = bar:CreateFontString(nil, "OVERLAY")
-    timerText:SetFont(GetCDMFont(), 11, GetCDMOutline())
-    if GetCDMUseShadow() then timerText:SetShadowOffset(1, -1); timerText:SetShadowColor(0, 0, 0, 1) end
+    SetCDMFont(timerText, GetCDMFont(), 11)
     timerText:SetTextColor(1, 1, 1, 0.9)
     timerText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
     timerText:SetJustifyH("RIGHT")
@@ -190,8 +196,7 @@ local function CreateTrackedBuffBarFrame(parent, idx)
 
     -- Name text (left side)
     local nameText = bar:CreateFontString(nil, "OVERLAY")
-    nameText:SetFont(GetCDMFont(), 11, GetCDMOutline())
-    if GetCDMUseShadow() then nameText:SetShadowOffset(1, -1); nameText:SetShadowColor(0, 0, 0, 1) end
+    SetCDMFont(nameText, GetCDMFont(), 11)
     nameText:SetTextColor(1, 1, 1, 0.9)
     nameText:SetPoint("LEFT", bar, "LEFT", 4, 0)
     nameText:SetJustifyH("LEFT")
@@ -266,8 +271,7 @@ local function ApplyTrackedBuffBarSettings(bar, cfg)
     if cfg.showTimer then
         bar._timerText:Show()
         local tSize = cfg.timerSize or 11
-        bar._timerText:SetFont(GetCDMFont(), tSize, GetCDMOutline())
-        if GetCDMUseShadow() then bar._timerText:SetShadowOffset(1, -1); bar._timerText:SetShadowColor(0, 0, 0, 1) end
+        SetCDMFont(bar._timerText, GetCDMFont(), tSize)
         bar._timerText:ClearAllPoints()
         if isVert then
             bar._timerText:SetPoint("TOP", bar, "TOP", cfg.timerX or 0, -8 + (cfg.timerY or 0))
@@ -302,8 +306,7 @@ local function ApplyTrackedBuffBarSettings(bar, cfg)
     if cfg.showName ~= false then
         bar._nameText:Show()
         local nSize = cfg.nameSize or 11
-        bar._nameText:SetFont(GetCDMFont(), nSize, GetCDMOutline())
-        if GetCDMUseShadow() then bar._nameText:SetShadowOffset(1, -1); bar._nameText:SetShadowColor(0, 0, 0, 1) end
+        SetCDMFont(bar._nameText, GetCDMFont(), nSize)
         bar._nameText:ClearAllPoints()
         if isVert then
             bar._nameText:SetPoint("BOTTOM", bar, "BOTTOM", cfg.nameX or 0, 8 + (cfg.nameY or 0))
@@ -644,7 +647,7 @@ local function CreateBuffBar(parent, idx)
 
     -- Name text
     local nameText = bar:CreateFontString(nil, "OVERLAY")
-    nameText:SetFont(GetCDMFont(), 11, GetCDMOutline())
+    SetCDMFont(nameText, GetCDMFont(), 11)
     nameText:SetTextColor(1, 1, 1, 0.9)
     nameText:SetPoint("LEFT", icon, "RIGHT", 4, 0)
     nameText:SetJustifyH("LEFT")
@@ -652,7 +655,7 @@ local function CreateBuffBar(parent, idx)
 
     -- Timer text
     local timerText = bar:CreateFontString(nil, "OVERLAY")
-    timerText:SetFont(GetCDMFont(), 11, GetCDMOutline())
+    SetCDMFont(timerText, GetCDMFont(), 11)
     timerText:SetTextColor(1, 1, 1, 0.9)
     timerText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
     timerText:SetJustifyH("RIGHT")

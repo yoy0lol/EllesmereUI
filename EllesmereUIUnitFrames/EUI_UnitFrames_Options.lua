@@ -38,6 +38,13 @@ initFrame:SetScript("OnEvent", function(self)
     local function GetUFOptUseShadow()
         return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
     end
+    local function SetPVFont(fs, font, size)
+        if not (fs and fs.SetFont) then return end
+        local f = GetUFOptOutline()
+        fs:SetFont(font, size, f)
+        if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+        else fs:SetShadowOffset(0, 0) end
+    end
 
     ---------------------------------------------------------------------------
     --  Shared helpers
@@ -980,25 +987,18 @@ initFrame:SetScript("OnEvent", function(self)
         local leftTS = settings.leftTextSize or settings.textSize or 12
         local rightTS = settings.rightTextSize or settings.textSize or 12
         local leftFS = textOverlay:CreateFontString(nil, "OVERLAY")
-        leftFS:SetFont(PREVIEW_FONT, leftTS, GetUFOptOutline())
-        if GetUFOptUseShadow() then leftFS:SetShadowOffset(1, -1) else leftFS:SetShadowOffset(0, 0) end
-        leftFS:SetShadowColor(0, 0, 0, 1)
+        SetPVFont(leftFS, PREVIEW_FONT, leftTS)
         leftFS:SetTextColor(1, 1, 1)
         leftFS:SetWordWrap(false)
 
         -- Right text
         local rightFS = textOverlay:CreateFontString(nil, "OVERLAY")
-        rightFS:SetFont(PREVIEW_FONT, rightTS, GetUFOptOutline())
-        if GetUFOptUseShadow() then rightFS:SetShadowOffset(1, -1) else rightFS:SetShadowOffset(0, 0) end
-        rightFS:SetShadowColor(0, 0, 0, 1)
+        SetPVFont(rightFS, PREVIEW_FONT, rightTS)
         rightFS:SetTextColor(1, 1, 1)
         rightFS:SetWordWrap(false)
 
-        -- Center text (health bar)
         local centerFS = textOverlay:CreateFontString(nil, "OVERLAY")
-        centerFS:SetFont(PREVIEW_FONT, settings.centerTextSize or settings.textSize or 12, GetUFOptOutline())
-        if GetUFOptUseShadow() then centerFS:SetShadowOffset(1, -1) else centerFS:SetShadowOffset(0, 0) end
-        centerFS:SetShadowColor(0, 0, 0, 1)
+        SetPVFont(centerFS, PREVIEW_FONT, settings.centerTextSize or settings.textSize or 12)
         centerFS:SetTextColor(1, 1, 1)
         centerFS:SetWordWrap(false)
 
@@ -1168,8 +1168,7 @@ initFrame:SetScript("OnEvent", function(self)
             ppOvr:SetAllPoints()
             ppOvr:SetFrameLevel(power:GetFrameLevel() + 2)
             ppPreviewFS = ppOvr:CreateFontString(nil, "OVERLAY")
-            ppPreviewFS:SetFont(PREVIEW_FONT, 9, GetUFOptOutline())
-            if GetUFOptUseShadow() then ppPreviewFS:SetShadowOffset(1, -1) else ppPreviewFS:SetShadowOffset(0, 0) end
+            SetPVFont(ppPreviewFS, PREVIEW_FONT, 9)
             ppPreviewFS:Hide()
         end
 
@@ -1260,22 +1259,18 @@ initFrame:SetScript("OnEvent", function(self)
             end
 
             castNameFS2 = castbar:CreateFontString(nil, "OVERLAY")
-            castNameFS2:SetFont(PREVIEW_FONT, 11, GetUFOptOutline())
+            SetPVFont(castNameFS2, PREVIEW_FONT, 11)
             PP.Point(castNameFS2, "LEFT", castbar, "LEFT", 5, 1)
             castNameFS2:SetJustifyH("LEFT")
             castNameFS2:SetTextColor(1, 1, 1)
-            if GetUFOptUseShadow() then castNameFS2:SetShadowOffset(1, -1) else castNameFS2:SetShadowOffset(0, 0) end
-            castNameFS2:SetShadowColor(0, 0, 0, 1)
             castNameFS2:SetText(castSpellName)
 
             -- Cast timer text on the right (matching real castbar.Time)
             castTimeFS = castbar:CreateFontString(nil, "OVERLAY")
-            castTimeFS:SetFont(PREVIEW_FONT, 11, GetUFOptOutline())
+            SetPVFont(castTimeFS, PREVIEW_FONT, 11)
             PP.Point(castTimeFS, "RIGHT", castbar, "RIGHT", -5, 0)
             castTimeFS:SetJustifyH("RIGHT")
             castTimeFS:SetTextColor(1, 1, 1)
-            if GetUFOptUseShadow() then castTimeFS:SetShadowOffset(1, -1) else castTimeFS:SetShadowOffset(0, 0) end
-            castTimeFS:SetShadowColor(0, 0, 0, 1)
             local spellCastTime = (_previewCastSpell and _previewCastSpell.castTime) or 3.0
             castTimeFS:SetText(string.format("%.1f", spellCastTime * (1 - (_previewCastFill or 0.6))))
 
@@ -1360,23 +1355,17 @@ initFrame:SetScript("OnEvent", function(self)
             btbTextOvr:SetFrameLevel(btbFrame:GetFrameLevel() + 2)
 
             btbLeftFS = btbTextOvr:CreateFontString(nil, "OVERLAY")
-            btbLeftFS:SetFont(PREVIEW_FONT, settings.btbLeftSize or 11, GetUFOptOutline())
-            if GetUFOptUseShadow() then btbLeftFS:SetShadowOffset(1, -1) else btbLeftFS:SetShadowOffset(0, 0) end
-            btbLeftFS:SetShadowColor(0, 0, 0, 1)
+            SetPVFont(btbLeftFS, PREVIEW_FONT, settings.btbLeftSize or 11)
             btbLeftFS:SetTextColor(1, 1, 1)
             btbLeftFS:SetWordWrap(false)
 
             btbRightFS = btbTextOvr:CreateFontString(nil, "OVERLAY")
-            btbRightFS:SetFont(PREVIEW_FONT, settings.btbRightSize or 11, GetUFOptOutline())
-            if GetUFOptUseShadow() then btbRightFS:SetShadowOffset(1, -1) else btbRightFS:SetShadowOffset(0, 0) end
-            btbRightFS:SetShadowColor(0, 0, 0, 1)
+            SetPVFont(btbRightFS, PREVIEW_FONT, settings.btbRightSize or 11)
             btbRightFS:SetTextColor(1, 1, 1)
             btbRightFS:SetWordWrap(false)
 
             btbCenterFS = btbTextOvr:CreateFontString(nil, "OVERLAY")
-            btbCenterFS:SetFont(PREVIEW_FONT, settings.btbCenterSize or 11, GetUFOptOutline())
-            if GetUFOptUseShadow() then btbCenterFS:SetShadowOffset(1, -1) else btbCenterFS:SetShadowOffset(0, 0) end
-            btbCenterFS:SetShadowColor(0, 0, 0, 1)
+            SetPVFont(btbCenterFS, PREVIEW_FONT, settings.btbCenterSize or 11)
             btbCenterFS:SetTextColor(1, 1, 1)
             btbCenterFS:SetWordWrap(false)
 
@@ -1638,9 +1627,7 @@ initFrame:SetScript("OnEvent", function(self)
         disabledOverlay:SetBackdropColor(0, 0, 0, 0.6)
         disabledOverlay:Hide()
         local disabledText = disabledOverlay:CreateFontString(nil, "OVERLAY")
-        disabledText:SetFont(PREVIEW_FONT, 11, GetUFOptOutline())
-        if GetUFOptUseShadow() then disabledText:SetShadowOffset(1, -1) else disabledText:SetShadowOffset(0, 0) end
-        disabledText:SetShadowColor(0, 0, 0, 1)
+        SetPVFont(disabledText, PREVIEW_FONT, 11)
         disabledText:SetTextColor(1, 1, 1)
         disabledText:SetText("Disabled")
         -- Position overlay and text relative to pf/health (updated in Update and on show)

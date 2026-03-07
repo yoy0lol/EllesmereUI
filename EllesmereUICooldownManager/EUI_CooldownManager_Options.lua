@@ -46,6 +46,13 @@ initFrame:SetScript("OnEvent", function(self)
     local function GetCDMOptUseShadow()
         return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
     end
+    local function SetPVFont(fs, font, size)
+        if not (fs and fs.SetFont) then return end
+        local f = GetCDMOptOutline()
+        fs:SetFont(font, size, f)
+        if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+        else fs:SetShadowOffset(0, 0) end
+    end
     local function MakeTextInput(parent, label, yOffset, getValue, setValue)
         local ROW_H = 50
         local frame = CreateFrame("Frame", nil, parent)
@@ -1291,8 +1298,7 @@ initFrame:SetScript("OnEvent", function(self)
 
                 if bd.showTimer then
                     local timer = pvBar:CreateFontString(nil, "OVERLAY")
-                    timer:SetFont(FONT_PATH, bd.timerSize or 11, GetCDMOptOutline())
-                    if GetCDMOptUseShadow() then timer:SetShadowOffset(1, -1) else timer:SetShadowOffset(0, 0) end; timer:SetShadowColor(0, 0, 0, 1)
+                    SetPVFont(timer, FONT_PATH, bd.timerSize or 11)
                     timer:SetTextColor(1, 1, 1, 0.9)
                     timer:SetPoint("RIGHT", pvBar, "RIGHT", -8 + (bd.timerX or 0), bd.timerY or 0)
                     timer:SetText("3.2")
@@ -1301,8 +1307,7 @@ initFrame:SetScript("OnEvent", function(self)
                 -- Spell name
                 if bd.showName ~= false then
                     local nameFs = pvBar:CreateFontString(nil, "OVERLAY")
-                    nameFs:SetFont(FONT_PATH, bd.nameSize or 11, GetCDMOptOutline())
-                    if GetCDMOptUseShadow() then nameFs:SetShadowOffset(1, -1) else nameFs:SetShadowOffset(0, 0) end; nameFs:SetShadowColor(0, 0, 0, 1)
+                    SetPVFont(nameFs, FONT_PATH, bd.nameSize or 11)
                     nameFs:SetTextColor(1, 1, 1, 0.9)
                     nameFs:SetPoint("LEFT", pvBar, "LEFT", 8 + (bd.nameX or 0), bd.nameY or 0)
                     if bd.spellID and bd.spellID > 0 then
@@ -1938,9 +1943,7 @@ initFrame:SetScript("OnEvent", function(self)
             local fontPath = (EllesmereUI and EllesmereUI.GetFontPath and EllesmereUI.GetFontPath("cdm")) or STANDARD_TEXT_FONT
             for _, region in ipairs({ slot._previewCD:GetRegions() }) do
                 if region:GetObjectType() == "FontString" then
-                    region:SetFont(fontPath, fSize, GetCDMOptOutline())
-                    if GetCDMOptUseShadow() then region:SetShadowOffset(1, -1) else region:SetShadowOffset(0, 0) end
-                    region:SetShadowColor(0, 0, 0, 1)
+                    SetPVFont(region, fontPath, fSize)
                     break
                 end
             end
@@ -2669,8 +2672,7 @@ initFrame:SetScript("OnEvent", function(self)
 
             -- Stack count text (mirrors _stackText on real CDM icons)
             local stackTxt = slot:CreateFontString(nil, "OVERLAY")
-            stackTxt:SetFont(FONT_PATH, 11, GetCDMOptOutline())
-            if GetCDMOptUseShadow() then stackTxt:SetShadowOffset(1, -1) else stackTxt:SetShadowOffset(0, 0) end
+            SetPVFont(stackTxt, FONT_PATH, 11)
             stackTxt:SetPoint("BOTTOMRIGHT", 0, 2)
             stackTxt:SetJustifyH("RIGHT")
             stackTxt:Hide()
@@ -2678,8 +2680,7 @@ initFrame:SetScript("OnEvent", function(self)
 
             -- Keybind text (mirrors _keybindText on real CDM icons)
             local kbTxt = slot:CreateFontString(nil, "OVERLAY")
-            kbTxt:SetFont(FONT_PATH, 9, GetCDMOptOutline())
-            if GetCDMOptUseShadow() then kbTxt:SetShadowOffset(1, -1) else kbTxt:SetShadowOffset(0, 0) end
+            SetPVFont(kbTxt, FONT_PATH, 9)
             kbTxt:SetPoint("TOPLEFT", 2, -2)
             kbTxt:SetJustifyH("LEFT")
             kbTxt:Hide()
@@ -3308,8 +3309,7 @@ initFrame:SetScript("OnEvent", function(self)
                 -- Stack count preview text
                 if slot._stackText then
                     if i <= count then
-                        slot._stackText:SetFont(FONT_PATH, bd.stackCountSize or 11, GetCDMOptOutline())
-                    if GetCDMOptUseShadow() then slot._stackText:SetShadowOffset(1, -1) else slot._stackText:SetShadowOffset(0, 0) end
+                        SetPVFont(slot._stackText, FONT_PATH, bd.stackCountSize or 11)
                         slot._stackText:ClearAllPoints()
                         slot._stackText:SetPoint("BOTTOMRIGHT", bd.stackCountX or 0, (bd.stackCountY or 0) + 2)
                         slot._stackText:SetTextColor(bd.stackCountR or 1, bd.stackCountG or 1, bd.stackCountB or 1)
@@ -3331,8 +3331,7 @@ initFrame:SetScript("OnEvent", function(self)
 
                 -- Keybind text preview
                 if slot._keybindText then
-                    slot._keybindText:SetFont(FONT_PATH, bd.keybindSize or 10, GetCDMOptOutline())
-                    if GetCDMOptUseShadow() then slot._keybindText:SetShadowOffset(1, -1) else slot._keybindText:SetShadowOffset(0, 0) end
+                    SetPVFont(slot._keybindText, FONT_PATH, bd.keybindSize or 10)
                     slot._keybindText:ClearAllPoints()
                     slot._keybindText:SetPoint("TOPLEFT", slot, "TOPLEFT", bd.keybindOffsetX or 2, bd.keybindOffsetY or -2)
                     slot._keybindText:SetTextColor(bd.keybindR or 1, bd.keybindG or 1, bd.keybindB or 1, bd.keybindA or 0.9)

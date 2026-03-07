@@ -1907,8 +1907,7 @@ initFrame:SetScript("OnEvent", function(self)
         local SWATCH_SZ     = 20
 
         -- items = { { label, classToken, getColor, setColor, resetFn }, ... }
-        local function BuildColorGrid(par, yPos, items)
-            local totalRows = math.ceil(#items / GRID_COLS)
+        local function BuildColorGrid(par, yPos, items)            local totalRows = math.ceil(#items / GRID_COLS)
             local totalW = par:GetWidth() - GRID_PAD * 2
             local colW = math.floor(totalW / GRID_COLS)
 
@@ -1995,70 +1994,6 @@ initFrame:SetScript("OnEvent", function(self)
         end
 
         -------------------------------------------------------------------
-        --  CLASS COLORS section
-        -------------------------------------------------------------------
-        _, h = W:SectionHeader(parent, "CLASS COLORS", y);  y = y - h
-
-        local classItems = {}
-        for _, token in ipairs(CLASS_ORDER) do
-            local lbl = CLASS_LABELS[token]
-            local def = CLASS_COLOR_MAP[token] or { r = 1, g = 1, b = 1 }
-            classItems[#classItems + 1] = {
-                label = lbl,
-                classToken = token,
-                getColor = function()
-                    local db = GetCustomColorsDB()
-                    if db.class and db.class[token] then return db.class[token] end
-                    return { r = def.r, g = def.g, b = def.b }
-                end,
-                setColor = function(c)
-                    SaveColorEntry("class", token, c)
-                end,
-                resetFn = function()
-                    local db = GetCustomColorsDB()
-                    if db.class then db.class[token] = nil end
-                end,
-            }
-        end
-
-        h = BuildColorGrid(parent, y, classItems)
-        y = y - h
-
-        _, h = W:Spacer(parent, y, 20);  y = y - h
-
-        -------------------------------------------------------------------
-        --  POWER COLORS section
-        -------------------------------------------------------------------
-        _, h = W:SectionHeader(parent, "POWER COLORS", y);  y = y - h
-
-        local POWER_ORDER = { "MANA", "RAGE", "FOCUS", "ENERGY", "RUNIC_POWER", "FURY" }
-        local powerItems = {}
-        for _, pk in ipairs(POWER_ORDER) do
-            local lbl = POWER_LABELS[pk] or pk
-            local def = DEFAULT_POWER_COLORS[pk] or { r = 1, g = 1, b = 1 }
-            powerItems[#powerItems + 1] = {
-                label = lbl,
-                classToken = nil,
-                getColor = function()
-                    local db = GetCustomColorsDB()
-                    if db.power and db.power[pk] then return db.power[pk] end
-                    return { r = def.r, g = def.g, b = def.b }
-                end,
-                setColor = function(c)
-                    SaveColorEntry("power", pk, c)
-                end,
-                resetFn = function()
-                    EllesmereUI.ResetPowerColor(pk)
-                end,
-            }
-        end
-
-        h = BuildColorGrid(parent, y, powerItems)
-        y = y - h
-
-        _, h = W:Spacer(parent, y, 20);  y = y - h
-
-        -------------------------------------------------------------------
         --  FONTS section
         -------------------------------------------------------------------
         _, h = W:SectionHeader(parent, "FONTS", y);  y = y - h
@@ -2143,6 +2078,72 @@ initFrame:SetScript("OnEvent", function(self)
                   if rl then for i2 = 1, #rl do rl[i2]() end end
                   FontReload()
               end });  y = y - h
+
+        _, h = W:Spacer(parent, y, 20);  y = y - h
+
+        -------------------------------------------------------------------
+        --  CLASS COLORS section
+        -------------------------------------------------------------------
+        _, h = W:SectionHeader(parent, "CLASS COLORS", y);  y = y - h
+
+        local classItems = {}
+        for _, token in ipairs(CLASS_ORDER) do
+            local lbl = CLASS_LABELS[token]
+            local def = CLASS_COLOR_MAP[token] or { r = 1, g = 1, b = 1 }
+            classItems[#classItems + 1] = {
+                label = lbl,
+                classToken = token,
+                getColor = function()
+                    local db = GetCustomColorsDB()
+                    if db.class and db.class[token] then return db.class[token] end
+                    return { r = def.r, g = def.g, b = def.b }
+                end,
+                setColor = function(c)
+                    SaveColorEntry("class", token, c)
+                end,
+                resetFn = function()
+                    local db = GetCustomColorsDB()
+                    if db.class then db.class[token] = nil end
+                end,
+            }
+        end
+
+        h = BuildColorGrid(parent, y, classItems)
+        y = y - h
+
+        _, h = W:Spacer(parent, y, 20);  y = y - h
+
+        -------------------------------------------------------------------
+        --  POWER COLORS section
+        -------------------------------------------------------------------
+        _, h = W:SectionHeader(parent, "POWER COLORS", y);  y = y - h
+
+        local POWER_ORDER = { "MANA", "RAGE", "FOCUS", "ENERGY", "RUNIC_POWER", "FURY" }
+        local powerItems = {}
+        for _, pk in ipairs(POWER_ORDER) do
+            local lbl = POWER_LABELS[pk] or pk
+            local def = DEFAULT_POWER_COLORS[pk] or { r = 1, g = 1, b = 1 }
+            powerItems[#powerItems + 1] = {
+                label = lbl,
+                classToken = nil,
+                getColor = function()
+                    local db = GetCustomColorsDB()
+                    if db.power and db.power[pk] then return db.power[pk] end
+                    return { r = def.r, g = def.g, b = def.b }
+                end,
+                setColor = function(c)
+                    SaveColorEntry("power", pk, c)
+                end,
+                resetFn = function()
+                    EllesmereUI.ResetPowerColor(pk)
+                end,
+            }
+        end
+
+        h = BuildColorGrid(parent, y, powerItems)
+        y = y - h
+
+        _, h = W:Spacer(parent, y, 20);  y = y - h
 
         return math.abs(y)
     end

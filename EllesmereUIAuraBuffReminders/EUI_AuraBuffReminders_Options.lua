@@ -31,6 +31,13 @@ initFrame:SetScript("OnEvent", function(self)
     local function GetABROptUseShadow()
         return not EllesmereUI or not EllesmereUI.GetFontUseShadow or EllesmereUI.GetFontUseShadow()
     end
+    local function SetPVFont(fs, font, size)
+        if not (fs and fs.SetFont) then return end
+        local f = GetABROptOutline()
+        fs:SetFont(font, size, f)
+        if f == "" then fs:SetShadowOffset(1, -1); fs:SetShadowColor(0, 0, 0, 1)
+        else fs:SetShadowOffset(0, 0) end
+    end
 
     ---------------------------------------------------------------------------
     --  DB helpers
@@ -254,8 +261,7 @@ initFrame:SetScript("OnEvent", function(self)
                 local textSize = d and d.textSize or 11
                 local textXOff = d and d.textXOffset or 0
                 local textYOff = d and d.textYOffset or -2
-                btn._text:SetFont(fontPath, textSize, GetABROptOutline())
-                if GetABROptUseShadow() then btn._text:SetShadowOffset(1, -1) else btn._text:SetShadowOffset(0, 0) end
+                SetPVFont(btn._text, fontPath, textSize)
                 btn._text:ClearAllPoints()
                 btn._text:SetPoint("TOP", btn, "BOTTOM", textXOff, textYOff)
                 btn._text:SetTextColor(tc.r, tc.g, tc.b, 1)
@@ -485,8 +491,7 @@ initFrame:SetScript("OnEvent", function(self)
             local textYOff = d and d.textYOffset or -2
             local text = btn:CreateFontString(nil, "OVERLAY")
             text:SetPoint("TOP", btn, "BOTTOM", textXOff, textYOff)
-            text:SetFont(fontPath, textSize, GetABROptOutline())
-            if GetABROptUseShadow() then text:SetShadowOffset(1, -1) else text:SetShadowOffset(0, 0) end
+            SetPVFont(text, fontPath, textSize)
             text:SetTextColor(tc.r, tc.g, tc.b, 1)
             text:SetText(iconData.label or "")
             if not showText then text:Hide() end

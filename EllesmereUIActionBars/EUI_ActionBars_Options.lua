@@ -457,8 +457,8 @@ initFrame:SetScript("OnEvent", function(self)
 
             -- Keybind text (top-right, mirrors real button HotKey position)
             local keybindFS = bf:CreateFontString(nil, "OVERLAY")
-            keybindFS:SetFont(DEFAULT_FONT, 12, GetEABOptOutline())
-            if GetEABOptUseShadow() then keybindFS:SetShadowOffset(1, -1) else keybindFS:SetShadowOffset(0, 0) end
+            keybindFS:SetFont(DEFAULT_FONT, 12, "OUTLINE")
+            keybindFS:SetShadowOffset(0, 0)
             keybindFS:SetTextColor(1, 1, 1)
             keybindFS:SetPoint("TOPRIGHT", bf, "TOPRIGHT", -1, -3)
             keybindFS:SetPoint("TOPLEFT", bf, "TOPLEFT", 4, -3)
@@ -468,8 +468,8 @@ initFrame:SetScript("OnEvent", function(self)
 
             -- Count / charges text (bottom-right, mirrors real button Count position)
             local countFS = bf:CreateFontString(nil, "OVERLAY")
-            countFS:SetFont(DEFAULT_FONT, 12, GetEABOptOutline())
-            if GetEABOptUseShadow() then countFS:SetShadowOffset(1, -1) else countFS:SetShadowOffset(0, 0) end
+            countFS:SetFont(DEFAULT_FONT, 12, "OUTLINE")
+            countFS:SetShadowOffset(0, 0)
             countFS:SetTextColor(1, 1, 1)
             countFS:SetPoint("BOTTOMRIGHT", bf, "BOTTOMRIGHT", -1, 4)
             countFS:SetText("")
@@ -797,8 +797,8 @@ initFrame:SetScript("OnEvent", function(self)
                         end
                         keybindFS:SetText(hkText)
                     end
-                    keybindFS:SetFont(fontPath, scaledKBSize, GetEABOptOutline())
-                    if GetEABOptUseShadow() then keybindFS:SetShadowOffset(1, -1) else keybindFS:SetShadowOffset(0, 0) end
+                    keybindFS:SetFont(fontPath, scaledKBSize, "OUTLINE")
+                    keybindFS:SetShadowOffset(0, 0)
                     keybindFS:SetTextColor(kbColor.r, kbColor.g, kbColor.b)
                     -- Apply keybind X/Y offsets
                     local kbOX = (settings.keybindOffsetX or 0) * totalScale
@@ -817,8 +817,8 @@ initFrame:SetScript("OnEvent", function(self)
                         end
                         countFS:SetText(ctText)
                     end
-                    countFS:SetFont(fontPath, scaledCTSize, GetEABOptOutline())
-                    if GetEABOptUseShadow() then countFS:SetShadowOffset(1, -1) else countFS:SetShadowOffset(0, 0) end
+                    countFS:SetFont(fontPath, scaledCTSize, "OUTLINE")
+                    countFS:SetShadowOffset(0, 0)
                     countFS:SetTextColor(ctColor.r, ctColor.g, ctColor.b)
                     -- Apply charges X/Y offsets
                     local ctOX = (settings.countOffsetX or 0) * totalScale

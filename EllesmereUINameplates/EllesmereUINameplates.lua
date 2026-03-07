@@ -32,7 +32,14 @@ local function GetNPUseShadow()
 end
 local function SetFSFont(fs, size, flags)
   if not (fs and fs.SetFont) then return end
-  fs:SetFont(GetFont(), size or 11, flags or GetNPOutline())
+  local f = flags or GetNPOutline()
+  fs:SetFont(GetFont(), size or 11, f)
+  if f == "" then
+    fs:SetShadowOffset(1, -1)
+    fs:SetShadowColor(0, 0, 0, 1)
+  else
+    fs:SetShadowOffset(0, 0)
+  end
 end
 
 ns.GetFont = GetFont
@@ -1185,10 +1192,10 @@ local frameCache = CreateFramePool("Frame", UIParent, nil, nil, false, function(
     plate.healthTextFrame:SetAllPoints(plate.health)
     plate.healthTextFrame:SetFrameLevel(plate.health:GetFrameLevel() + 2)
     plate.hpText = plate.healthTextFrame:CreateFontString(nil, "OVERLAY")
-    SetFSFont(plate.hpText, 10, "OUTLINE")
+    SetFSFont(plate.hpText, 10, GetNPOutline())
     PP.Point(plate.hpText, "RIGHT", plate.health, "RIGHT", -2, 0)
     plate.hpNumber = plate.healthTextFrame:CreateFontString(nil, "OVERLAY")
-    SetFSFont(plate.hpNumber, 10, "OUTLINE")
+    SetFSFont(plate.hpNumber, 10, GetNPOutline())
     plate.hpNumber:SetPoint("CENTER", plate.health, "CENTER", 0, 0)
     plate.hpNumber:Hide()
     plate.highlight = plate.healthTextFrame:CreateTexture(nil, "OVERLAY", nil, 6)
@@ -1200,7 +1207,7 @@ local frameCache = CreateFramePool("Frame", UIParent, nil, nil, false, function(
     plate.topTextFrame:SetAllPoints(plate.health)
     plate.topTextFrame:SetFrameLevel(plate.health:GetFrameLevel() + 6)
     plate.name = plate:CreateFontString(nil, "OVERLAY")
-    SetFSFont(plate.name, GetEnemyNameTextSize(), "OUTLINE")
+    SetFSFont(plate.name, GetEnemyNameTextSize(), GetNPOutline())
     PP.Point(plate.name, "BOTTOM", plate.health, "TOP", 0, 4)
     PP.Width(plate.name, math.max(GetHealthBarWidth(), 20))
     plate.name:SetWordWrap(false)
@@ -1313,13 +1320,13 @@ local frameCache = CreateFramePool("Frame", UIParent, nil, nil, false, function(
     plate.kickTick:SetPoint("BOTTOM", plate.kickMarker, "BOTTOM", 0, 0)
     plate.kickTick:SetPoint("LEFT", plate.kickMarker:GetStatusBarTexture(), "RIGHT")
     plate.castName = plate.cast:CreateFontString(nil, "OVERLAY")
-    SetFSFont(plate.castName, 10, "OUTLINE")
+    SetFSFont(plate.castName, 10, GetNPOutline())
     plate.castName:SetPoint("LEFT", plate.cast, "LEFT", 5, 0)
     plate.castName:SetJustifyH("LEFT")
     plate.castName:SetWordWrap(false)
     plate.castName:SetMaxLines(1)
     plate.castTarget = plate.cast:CreateFontString(nil, "OVERLAY")
-    SetFSFont(plate.castTarget, 10, "OUTLINE")
+    SetFSFont(plate.castTarget, 10, GetNPOutline())
     plate.castTarget:SetPoint("RIGHT", plate.cast, "RIGHT", -3, 0)
     plate.castTarget:SetJustifyH("RIGHT")
     plate.castTarget:SetWordWrap(false)
@@ -2785,8 +2792,8 @@ function NameplateFrame:SetUnit(unit, nameplate)
     local cns = (db and db.castNameSize) or defaults.castNameSize
     local cts = (db and db.castTargetSize) or defaults.castTargetSize
     local cnc = (db and db.castNameColor) or defaults.castNameColor
-    SetFSFont(self.castName, cns, "OUTLINE")
-    SetFSFont(self.castTarget, cts, "OUTLINE")
+    SetFSFont(self.castName, cns, GetNPOutline())
+    SetFSFont(self.castTarget, cts, GetNPOutline())
     self.castName:SetTextColor(cnc.r, cnc.g, cnc.b, 1)
     -- Cast target color: class-colored if enabled and target is a player, otherwise use castTargetColor
     local useClassColor = defaults.castTargetClassColor
@@ -3115,7 +3122,7 @@ function NameplateFrame:UpdateHealthValues()
         local sr, sg, sb = GetTextSlotColor(slot.key)
         if element == "healthPercent" then
             self.hpText:SetParent(self.healthTextFrame)
-            SetFSFont(self.hpText, slotFontSz, "OUTLINE")
+            SetFSFont(self.hpText, slotFontSz, GetNPOutline())
             self.hpText:SetText(pctText)
             self.hpText:ClearAllPoints()
             if slot.anchor == "CENTER" then
@@ -3128,7 +3135,7 @@ function NameplateFrame:UpdateHealthValues()
             self.hpText:Show()
         elseif element == "healthNumber" then
             self.hpNumber:SetParent(self.healthTextFrame)
-            SetFSFont(self.hpNumber, slotFontSz, "OUTLINE")
+            SetFSFont(self.hpNumber, slotFontSz, GetNPOutline())
             self.hpNumber:SetText(numText)
             self.hpNumber:ClearAllPoints()
             if slot.anchor == "CENTER" then
@@ -3141,7 +3148,7 @@ function NameplateFrame:UpdateHealthValues()
             self.hpNumber:Show()
         elseif element == "healthPctNum" or element == "healthNumPct" then
             self.hpText:SetParent(self.healthTextFrame)
-            SetFSFont(self.hpText, slotFontSz, "OUTLINE")
+            SetFSFont(self.hpText, slotFontSz, GetNPOutline())
             self.hpText:SetText(FormatCombinedHealth(element, pctText, numText))
             self.hpText:ClearAllPoints()
             if slot.anchor == "CENTER" then
@@ -3176,7 +3183,7 @@ function NameplateFrame:UpdateHealthValues()
                 fs:SetText(FormatCombinedHealth(topElement, pctText, numText))
             end
         end
-        SetFSFont(fs, topFontSz, "OUTLINE")
+        SetFSFont(fs, topFontSz, GetNPOutline())      SetFSFont(fs, topFontSz, GetNPOutline())
         fs:SetParent(self.topTextFrame)
         fs:ClearAllPoints()
         PP.Point(fs, "BOTTOM", self.health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)
@@ -3319,28 +3326,28 @@ function NameplateFrame:RefreshNamePosition()
     self.name:ClearAllPoints()
     if nameSlot == "textSlotLeft" then
         local txOff, tyOff = GetTextSlotOffsets("textSlotLeft")
-        SetFSFont(self.name, GetTextSlotSize("textSlotLeft"), "OUTLINE")
+        SetFSFont(self.name, GetTextSlotSize("textSlotLeft"), GetNPOutline())
         self.name:SetParent(self.healthTextFrame)
         PP.Point(self.name, "LEFT", self.health, "LEFT", 4 + txOff, tyOff)
         self.name:SetJustifyH("LEFT")
         self.name:Show()
     elseif nameSlot == "textSlotCenter" then
         local txOff, tyOff = GetTextSlotOffsets("textSlotCenter")
-        SetFSFont(self.name, GetTextSlotSize("textSlotCenter"), "OUTLINE")
+        SetFSFont(self.name, GetTextSlotSize("textSlotCenter"), GetNPOutline())
         self.name:SetParent(self.healthTextFrame)
         self.name:SetPoint("CENTER", self.health, "CENTER", txOff, tyOff)
         self.name:SetJustifyH("CENTER")
         self.name:Show()
     elseif nameSlot == "textSlotRight" then
         local txOff, tyOff = GetTextSlotOffsets("textSlotRight")
-        SetFSFont(self.name, GetTextSlotSize("textSlotRight"), "OUTLINE")
+        SetFSFont(self.name, GetTextSlotSize("textSlotRight"), GetNPOutline())
         self.name:SetParent(self.healthTextFrame)
         PP.Point(self.name, "RIGHT", self.health, "RIGHT", -2 + txOff, tyOff)
         self.name:SetJustifyH("RIGHT")
         self.name:Show()
     elseif nameSlot == "textSlotTop" then
         local txOff, tyOff = GetTextSlotOffsets("textSlotTop")
-        SetFSFont(self.name, GetTextSlotSize("textSlotTop"), "OUTLINE")
+        SetFSFont(self.name, GetTextSlotSize("textSlotTop"), GetNPOutline())
         self.name:SetParent(self.topTextFrame)
         local cpPush = GetClassPowerTopPush(self)
         PP.Point(self.name, "BOTTOM", self.health, "TOP", txOff, 4 + nameYOff + cpPush + tyOff)

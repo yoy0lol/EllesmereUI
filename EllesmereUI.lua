@@ -5007,7 +5007,7 @@ end
 -------------------------------------------------------------------------------
 --  Slash commands
 -------------------------------------------------------------------------------
-EllesmereUI.VERSION = "3.3.0"
+EllesmereUI.VERSION = "3.3.5"
 
 -- Register this addon's version into a shared global table (taint-free at load time)
 if not _G._EUI_AddonVersions then _G._EUI_AddonVersions = {} end
@@ -5184,8 +5184,8 @@ SlashCmdList.EUIOPTIONS = function()
     EllesmereUI:Toggle()
 end
 
--- Quick-access: /e opens global settings
-SLASH_EUIQUICK1 = "/e"
+-- Quick-access: /ee opens global settings
+SLASH_EUIQUICK1 = "/ee"
 SlashCmdList.EUIQUICK = function()
     if InCombatLockdown() then
         print("|cffff6060[EllesmereUI]|r Cannot open options during combat.")
