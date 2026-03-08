@@ -2430,13 +2430,16 @@ local function IsQuestMob(unit)
         elseif lt == Enum.TooltipDataLineType.QuestTitle then
             ignoreUntilTitle = false
         elseif lt == Enum.TooltipDataLineType.QuestObjective and not ignoreUntilTitle then
-            local c1, c2 = (line.leftText or ""):match("(%d+)/(%d+)")
-            if c1 and c1 ~= c2 then
-                questMobCache[unit] = true
-                return true
-            end
-            local pct = (line.leftText or ""):match("(%d+)%%")
-            if pct and pct ~= "100" then
+            -- leftText may be a tainted secret string; wrap in pcall
+            local ok, isIncomplete = pcall(function()
+                local txt = line.leftText or ""
+                local c1, c2 = txt:match("(%d+)/(%d+)")
+                if c1 and c1 ~= c2 then return true end
+                local pct = txt:match("(%d+)%%")
+                if pct and pct ~= "100" then return true end
+                return false
+            end)
+            if ok and isIncomplete then
                 questMobCache[unit] = true
                 return true
             end

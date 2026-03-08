@@ -316,6 +316,7 @@ local DEFAULTS = {
             thresholdCount   = 3,
             thresholdPartialOnly = false,
             thresholdR = 0x0c/255, thresholdG = 0xd2/255, thresholdB = 0x9d/255, thresholdA = 1,
+            chargedR = 0.44, chargedG = 0.77, chargedB = 1.00, chargedA = 1,
             visibility  = "always",  -- "always","combat","target"
             oocAlpha    = 1.0,
             offsetX     = 0,
@@ -599,6 +600,14 @@ local function CreatePip(parent, w, h, idx, borderSize, borderR, borderG, border
             self._fill:SetTexture("Interface\\Buttons\\WHITE8x8")
         end
         PP.DisablePixelSnap(self._fill)
+        -- Keep recharge bar texture in sync if it exists
+        if self._rechargeBar then
+            if path then
+                self._rechargeBar:SetStatusBarTexture(path)
+            else
+                self._rechargeBar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+            end
+        end
     end
 
     pip._active = false
@@ -1619,6 +1628,13 @@ local function UpdatePrimaryBar()
     end
 end
 
+-- Pre-allocated rune sorting buffers to avoid per-tick table creation.
+-- Uses parallel arrays instead of tables-of-tables for zero GC pressure.
+local _runeOrder = {}       -- [slot] = rune index (1-6)
+local _runeRemaining = {}   -- [rune index] = remaining time
+local _runeStart = {}       -- [rune index] = cooldown start
+local _runeDuration = {}    -- [rune index] = cooldown duration
+local _runeReady = {}       -- [rune index] = true/false
 
 local function UpdateSecondaryResource()
     if not secondaryFrame or not secondaryFrame:IsShown() then return end
@@ -1626,6 +1642,7 @@ local function UpdateSecondaryResource()
 
     local powerType = cachedSecondary.power
     local maxPts = cachedSecondary.max or 5
+
     local sp = ERB.db.profile.secondary
     local pc = POWER_COLORS[powerType]
     local r, g, b, a = 1, 1, 1, 1
@@ -1644,19 +1661,117 @@ local function UpdateSecondaryResource()
     end
 
     if cachedSecondary.type == "runes" then
+        -- Sort runes: ready first (left), then cooling down sorted by
+        -- ascending remaining time so they deplete right-to-left.
+        -- Uses pre-allocated parallel arrays to avoid per-tick table creation.
+        local now = GetTime()
+        local readyN, cdN = 0, 0
         for i = 1, 6 do
-            local rf = runeFrames[i]
+            local start, duration, ready = GetRuneCooldown(i)
+            _runeStart[i] = start
+            _runeDuration[i] = duration
+            if ready then
+                _runeReady[i] = true
+                _runeRemaining[i] = 0
+                readyN = readyN + 1
+                _runeOrder[readyN] = i
+            else
+                _runeReady[i] = false
+                _runeRemaining[i] = (start and duration and duration > 0)
+                    and max(0, start + duration - now) or 999
+                cdN = cdN + 1
+            end
+        end
+        -- Append cd runes after ready runes in _runeOrder
+        local ci = readyN
+        for i = 1, 6 do
+            if not _runeReady[i] then
+                ci = ci + 1
+                _runeOrder[ci] = i
+            end
+        end
+        -- Insertion-sort the cd portion (indices readyN+1..readyN+cdN) by
+        -- remaining time. Max 6 elements so this is faster than table.sort
+        -- and avoids creating a comparator closure each tick.
+        for i = readyN + 2, readyN + cdN do
+            local key = _runeOrder[i]
+            local keyRem = _runeRemaining[key]
+            local j = i - 1
+            while j > readyN and _runeRemaining[_runeOrder[j]] > keyRem do
+                _runeOrder[j + 1] = _runeOrder[j]
+                j = j - 1
+            end
+            _runeOrder[j + 1] = key
+        end
+        local totalRunes = readyN + cdN
+
+        -- Compute pip geometry (same math as BuildBars)
+        local numPips = 6
+        local totalW = sp.pipWidth or 214
+        local pipSp = sp.pipSpacing or 1
+        local baseW = floor((totalW - (numPips - 1) * pipSp) / numPips)
+        local remainder = totalW - (numPips - 1) * pipSp - baseW * numPips
+
+        for pos = 1, totalRunes do
+            local runeIdx = _runeOrder[pos]
+            local rf = runeFrames[runeIdx]
             if rf and rf:IsShown() then
-                local start, duration, ready = GetRuneCooldown(i)
-                if ready then
+                -- x position accumulates across slots (no inner loop)
+                local w = baseW + (pos <= remainder and 1 or 0)
+                local x0 = 0
+                if pos > 1 then
+                    -- Sum widths of all previous slots + spacing
+                    x0 = baseW * (pos - 1) + pipSp * (pos - 1)
+                    -- Add extra pixels for remainder distribution
+                    local extraPx = pos - 1 < remainder and (pos - 1) or remainder
+                    x0 = x0 + extraPx
+                end
+                rf:ClearAllPoints()
+                rf:SetPoint("LEFT", secondaryFrame, "LEFT", x0, 0)
+                rf:SetWidth(w)
+
+                if _runeReady[runeIdx] then
+                    -- Ready rune: full brightness, hide recharge overlay
                     rf:SetActive(true, r, g, b, a)
+                    if rf._rechargeBar then rf._rechargeBar:Hide() end
                     if rf._cdText then rf._cdText:SetText("") end
                 else
+                    -- Cooling-down rune: hide normal fill, show recharge bar
                     rf:SetActive(false, r, g, b, a)
-                    if rf._cdText and start and duration and duration > 0 then
-                        local remaining = start + duration - GetTime()
-                        if remaining > 0 then
-                            rf._cdText:SetText(format("%.1f", remaining))
+
+                    -- Lazily create a StatusBar overlay for recharge progress
+                    if not rf._rechargeBar then
+                        local sb = CreateFrame("StatusBar", nil, rf)
+                        sb:SetAllPoints(rf)
+                        sb:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+                        sb:SetFrameLevel(rf:GetFrameLevel())
+                        sb:SetMinMaxValues(0, 1)
+                        -- Apply the same bar texture if one is set
+                        if rf._texKey then
+                            local texLookup = _G._ERB_BarTextures
+                            local path = texLookup and texLookup[rf._texKey]
+                            if path then sb:SetStatusBarTexture(path) end
+                        end
+                        rf._rechargeBar = sb
+                    end
+
+                    -- Compute recharge fraction (0 = just started, 1 = almost ready)
+                    local frac = 0
+                    local rStart, rDur = _runeStart[runeIdx], _runeDuration[runeIdx]
+                    if rStart and rDur and rDur > 0 then
+                        local elapsed = now - rStart
+                        frac = max(0, min(1, elapsed / rDur))
+                    end
+                    rf._rechargeBar:SetValue(frac)
+                    -- 75% brightness while recharging (subtle dim)
+                    rf._rechargeBar:SetStatusBarColor(r * 0.75, g * 0.75, b * 0.75, a)
+                    rf._rechargeBar:Show()
+
+                    -- Show duration text if Resource Text is enabled (DK runes use it for cooldown)
+                    if rf._cdText then
+                        local rem = _runeRemaining[runeIdx]
+                        if sp.showText and rem > 0 and rem < 999 then
+                            rf._cdText:SetText(format("%d", ceil(rem)))
                         else
                             rf._cdText:SetText("")
                         end
@@ -1798,7 +1913,7 @@ local function UpdateSecondaryResource()
                         sb:SetAllPoints(pip._fill)
                         sb:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
                         sb:SetStatusBarColor(r, g, b, a)
-                        sb:SetFrameLevel(pip:GetFrameLevel() + 1)
+                        sb:SetFrameLevel(pip:GetFrameLevel())
                         pip._secretBar = sb
                     end
                     pip._secretBar:SetMinMaxValues(i - 1, i)
@@ -1844,10 +1959,31 @@ local function UpdateSecondaryResource()
         local cur = UnitPower("player", powerType)
         local useThresh = sp.thresholdEnabled and cur >= sp.thresholdCount
         local tr, tg, tb = sp.thresholdR, sp.thresholdG, sp.thresholdB
+
+        -- Charged combo points (e.g. Supercharger talent)
+        local chargedSet
+        if powerType == PT.COMBO then
+            local fn = GetUnitChargedPowerPoints
+            if fn then
+                local pts = fn("player")
+                if pts and #pts > 0 then
+                    chargedSet = {}
+                    for _, idx in ipairs(pts) do chargedSet[idx] = true end
+                end
+            end
+        end
+        local cr, cg, cb, ca = sp.chargedR or 0.44, sp.chargedG or 0.77, sp.chargedB or 1.00, sp.chargedA or 1
+
         for i = 1, maxPts do
             if pips[i] and pips[i]:IsShown() then
                 local active = i <= cur
-                if active and useThresh then
+                if chargedSet and chargedSet[i] then
+                    if active then
+                        pips[i]:SetActive(true, cr, cg, cb, ca)
+                    else
+                        pips[i]:SetActive(true, cr * 0.5, cg * 0.5, cb * 0.5, ca)
+                    end
+                elseif active and useThresh then
                     if sp.thresholdPartialOnly and i < sp.thresholdCount then
                         pips[i]:SetActive(true, r, g, b, a)
                     else
@@ -1980,26 +2116,13 @@ local function OnUpdate(self, dt)
         end
     end
 
-    -- DK rune cooldown text updates (throttled to ~10 fps)
+    -- DK rune updates (throttled to ~10 fps) — calls the full sorted
+    -- update so rune positions stay consistent with depletion order.
     if cachedSecondary and cachedSecondary.type == "runes" then
         _runeThrottle = _runeThrottle + dt
         if _runeThrottle >= 0.1 then
             _runeThrottle = 0
-            for i = 1, 6 do
-                local rf = runeFrames[i]
-                if rf and rf:IsShown() then
-                    local start, duration, ready = GetRuneCooldown(i)
-                    if not ready and start and duration and duration > 0 then
-                        local remaining = start + duration - GetTime()
-                        if remaining > 0 then
-                            rf._cdText:SetText(format("%.1f", remaining))
-                        else
-                            rf._cdText:SetText("")
-                            rf:SetActive(true, POWER_COLORS[PT.RUNES][1], POWER_COLORS[PT.RUNES][2], POWER_COLORS[PT.RUNES][3])
-                        end
-                    end
-                end
-            end
+            UpdateSecondaryResource()
         end
     end
 
@@ -2776,6 +2899,8 @@ local function OnEvent(self, event, ...)
         UpdateSecondaryResource()
     elseif event == "RUNE_POWER_UPDATE" then
         UpdateSecondaryResource()
+    elseif event == "UNIT_POWER_POINT_CHARGE" then
+        UpdateSecondaryResource()
     elseif event == "PLAYER_REGEN_DISABLED" then
         isInCombat = true
         UpdateVisibility()
@@ -2925,6 +3050,7 @@ function ERB:OnEnable()
     eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_UPDATE", "player")
     eventFrame:RegisterEvent("PLAYER_DEAD")
     eventFrame:RegisterEvent("PLAYER_ALIVE")
+    eventFrame:RegisterUnitEvent("UNIT_POWER_POINT_CHARGE", "player")
     eventFrame:SetScript("OnEvent", OnEvent)
     eventFrame:SetScript("OnUpdate", OnUpdate)
 end

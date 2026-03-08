@@ -4997,7 +4997,7 @@ end
 -------------------------------------------------------------------------------
 --  Slash commands
 -------------------------------------------------------------------------------
-EllesmereUI.VERSION = "3.6"
+EllesmereUI.VERSION = "3.6.5"
 
 -- Register this addon's version into a shared global table (taint-free at load time)
 if not _G._EUI_AddonVersions then _G._EUI_AddonVersions = {} end
@@ -5631,8 +5631,10 @@ initFrame:SetScript("OnEvent", function(self, event)
         local function SpellIDTooltipHook(tooltip, data)
             if not (EllesmereUIDB and EllesmereUIDB.showSpellID) then return end
             if not data or not data.id then return end
+            if not tooltip or not tooltip.GetName then return end
             -- Avoid duplicate lines
-            local name = tooltip:GetName()
+            local ok, name = pcall(tooltip.GetName, tooltip)
+            if not ok or not name then return end
             if name then
                 for i = tooltip:NumLines(), 1, -1 do
                     local fs = _G[name .. "TextLeft" .. i]

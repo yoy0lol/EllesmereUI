@@ -3008,13 +3008,18 @@ local function UpdateCustomBarIcons(barKey)
                     resolvedID = overrideID
                 end
             end
+            local isBuffBarForOverride = (barKey == "buffs" or barData.barType == "buffs")
             -- Second-level runtime override: e.g. spell A (base) -> spell B (talent)
             -- -> spell C (activation override, e.g. Avenging Crusader transforms Crusader Strike).
             -- FindSpellOverrideByID only resolves one level; check the Blizzard CDM
             -- children cache for a deeper override on the already-resolved ID.
-            local blizzOverride = _tickBlizzOverrideCache[resolvedID] or _tickBlizzOverrideCache[spellID]
-            if blizzOverride then
-                resolvedID = blizzOverride
+            -- Skip on buff bars: buff bars show the base spell's state/CD, not the
+            -- temporary replacement that appears while the spell is on cooldown.
+            if not isBuffBarForOverride then
+                local blizzOverride = _tickBlizzOverrideCache[resolvedID] or _tickBlizzOverrideCache[spellID]
+                if blizzOverride then
+                    resolvedID = blizzOverride
+                end
             end
             -- Propagate charge cache from base to override so talent-swapped spells
             -- show charges correctly even before the override ID has been seen OOC.
@@ -3100,8 +3105,12 @@ local function UpdateCustomBarIcons(barKey)
                 -- Detect active aura state before applying cooldown.
                 -- If the spell has an active player aura, show its duration on the
                 -- cooldown frame (same as the main bar path for buff bars).
+                -- When the spell has a runtime override (resolvedID != spellID) on
+                -- a non-buff bar, skip aura display so the override's actual cooldown
+                -- is shown instead (e.g. a 2min ability that becomes a 24s kick).
                 local auraHandled = false
                 local skipCDDisplay = false
+                local hasRuntimeOverride = resolvedID ~= spellID and not isBuffBarForOverride
                 do
                     -- Primary: look up the Blizzard CDM child for this spell via the
                     -- spellID -> cooldownID map, then find the child frame by cooldownID.
@@ -3118,7 +3127,7 @@ local function UpdateCustomBarIcons(barKey)
                     local auraID = blizzChild and blizzChild.auraInstanceID
                     local auraUnit = blizzChild and blizzChild.auraDataUnit or "player"
 
-                    -- Fallback: spell not in any CDM viewer ΓÇö check _tickBlizzActiveCache
+                    -- Fallback: spell not in any CDM viewer — check _tickBlizzActiveCache
                     -- which covers all four viewers scanned each tick.
                     if not isAura then
                         if _tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID] then
@@ -3127,28 +3136,59 @@ local function UpdateCustomBarIcons(barKey)
                     end
 
                     if isAura then
-                        local chargeInfo = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(resolvedID)
-                        local isChargeSid = chargeInfo ~= nil
-                        local isBuffBar = (barKey == "buffs" or barData.barType == "buffs")
-                        if auraID and (not isChargeSid or isBuffBar) then
-                            local ok, auraDurObj = pcall(C_UnitAuras.GetAuraDuration, auraUnit, auraID)
-                            if ok and auraDurObj then
-                                ourIcon._cooldown:Clear()
-                                pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, auraDurObj, true)
-                                ourIcon._cooldown:SetReverse(false)
-                                auraHandled = true
-                                skipCDDisplay = true
+                        -- When the spell has a runtime override on a non-buff bar,
+                        -- skip aura duration display so the override spell's actual
+                        -- cooldown is shown (e.g. 2min ability becomes 24s kick).
+                        if hasRuntimeOverride then
+                            auraHandled = false
+                        else
+                            local chargeInfo = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(resolvedID)
+                            local isChargeSid = chargeInfo ~= nil
+                            if auraID and (not isChargeSid or isBuffBarForOverride) then
+                                local ok, auraDurObj = pcall(C_UnitAuras.GetAuraDuration, auraUnit, auraID)
+                                if ok and auraDurObj then
+                                    ourIcon._cooldown:Clear()
+                                    pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, auraDurObj, true)
+                                    ourIcon._cooldown:SetReverse(false)
+                                    auraHandled = true
+                                    skipCDDisplay = true
+                                else
+                                    auraHandled = true
+                                end
                             else
                                 auraHandled = true
                             end
-                        else
-                            auraHandled = true
                         end
                     end
 
                     -- Final fallback: _tickBlizzActiveCache covers spells active in CDM viewers
-                    if not auraHandled and (_tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID]) then
+                    if not hasRuntimeOverride and not auraHandled and (_tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID]) then
                         auraHandled = true
+                    end
+
+                    -- Summon-type fallback: spells with no aura but whose Blizzard CDM
+                    -- child is visible are considered active (e.g. pet summons).
+                    -- On buff bars, copy the child's cooldown to show effect duration.
+                    if not hasRuntimeOverride and not auraHandled then
+                        local blzCh2 = _tickBlizzAllChildCache[resolvedID] or _tickBlizzAllChildCache[spellID]
+                        if blzCh2 and blzCh2:IsShown() then
+                            auraHandled = true
+                            if isBuffBarForOverride then
+                                skipCDDisplay = true
+                                -- Use the cached DurationObject captured by our hook
+                                -- to avoid secret-value arithmetic from GetCooldownTimes.
+                                local blzCD = blzCh2.Cooldown
+                                if blzCD then
+                                    ourIcon._cooldown:Clear()
+                                    if blzCh2._ecmeDurObj then
+                                        pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, blzCh2._ecmeDurObj, true)
+                                    elseif blzCh2._ecmeRawStart and blzCh2._ecmeRawDur then
+                                        pcall(ourIcon._cooldown.SetCooldown, ourIcon._cooldown, blzCh2._ecmeRawStart, blzCh2._ecmeRawDur)
+                                    end
+                                    ourIcon._cooldown:SetReverse(false)
+                                end
+                            end
+                        end
                     end
                 end
 
@@ -3178,13 +3218,20 @@ local function UpdateCustomBarIcons(barKey)
                 ourIcon:Show()
                 visibleCount = visibleCount + 1
 
-                -- Hide buff icons when inactive (aura not active on player) ├â╞Æ├é┬ó├â┬ó├óΓé¼┼í├é┬¼├â┬ó├óΓÇÜ┬¼├é┬¥ buff bars only
+                -- Hide buff icons when inactive (aura not active on player) — buff bars only
                 -- Skip during unlock mode so the bar is fully visible for repositioning
-                local isBuffBar = (barKey == "buffs" or barData.barType == "buffs")
-                if barData.hideBuffsWhenInactive and isBuffBar and not EllesmereUI._unlockActive
+                if barData.hideBuffsWhenInactive and isBuffBarForOverride and not EllesmereUI._unlockActive
                    and not (EllesmereUI._mainFrame and EllesmereUI._mainFrame:IsShown()) then
                     -- Use the per-tick active cache built from all CDM viewers
-                    if not (_tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID]) then
+                    local isActive = _tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID]
+                    -- Fallback: check if the Blizzard CDM child is visible
+                    if not isActive then
+                        local blzCh = _tickBlizzAllChildCache[resolvedID] or _tickBlizzAllChildCache[spellID]
+                        if blzCh and blzCh:IsShown() then
+                            isActive = true
+                        end
+                    end
+                    if not isActive then
                         ourIcon:Hide()
                         visibleCount = visibleCount - 1
                     end
@@ -3351,7 +3398,15 @@ UpdateCDMBarIcons = function(barKey)
             local isBuffBar = (barKey == "buffs" or barData.barType == "buffs")
             if barData.hideBuffsWhenInactive and isBuffBar and not EllesmereUI._unlockActive
                and not (EllesmereUI._mainFrame and EllesmereUI._mainFrame:IsShown()) then
-                if not (_tickBlizzActiveCache[resolvedSid]) then
+                local isActive = _tickBlizzActiveCache[resolvedSid]
+                -- Fallback: check if the Blizzard CDM child is visible
+                if not isActive then
+                    local blzCh = _tickBlizzAllChildCache[resolvedSid]
+                    if blzCh and blzCh:IsShown() then
+                        isActive = true
+                    end
+                end
+                if not isActive then
                     ourIcon:Hide()
                 end
             end
@@ -3626,10 +3681,15 @@ local function UpdateTrackedBarIcons(barKey)
                     resolvedID = overrideID
                 end
             end
+            local isBuffBarForOvr = (barKey == "buffs" or barData.barType == "buffs")
             -- Second-level runtime override from Blizzard CDM children cache
-            local blizzOverride = _tickBlizzOverrideCache[resolvedID] or _tickBlizzOverrideCache[spellID]
-            if blizzOverride then
-                resolvedID = blizzOverride
+            -- Skip on buff bars: show the base spell's state, not the temporary
+            -- replacement that appears while the spell is on cooldown.
+            if not isBuffBarForOvr then
+                local blizzOverride = _tickBlizzOverrideCache[resolvedID] or _tickBlizzOverrideCache[spellID]
+                if blizzOverride then
+                    resolvedID = blizzOverride
+                end
             end
 
             -- Propagate charge cache from base to override
@@ -3703,6 +3763,7 @@ local function UpdateTrackedBarIcons(barKey)
                 -- Detect active aura state
                 local auraHandled = false
                 local skipCDDisplay = false
+                local hasRuntimeOverride = resolvedID ~= spellID and not isBuffBarForOvr
                 do
                     local blizzChild = _tickBlizzAllChildCache[resolvedID]
                     if not blizzChild then
@@ -3722,22 +3783,53 @@ local function UpdateTrackedBarIcons(barKey)
                     end
 
                     if isAura then
-                        local chargeInfo = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(resolvedID)
-                        local isChargeSid = chargeInfo ~= nil
-                        local isBuffBar = (barKey == "buffs" or barData.barType == "buffs")
-                        if auraID and (not isChargeSid or isBuffBar) then
-                            local ok, auraDurObj = pcall(C_UnitAuras.GetAuraDuration, auraUnit, auraID)
-                            if ok and auraDurObj then
-                                ourIcon._cooldown:Clear()
-                                pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, auraDurObj, true)
-                                ourIcon._cooldown:SetReverse(false)
-                                auraHandled = true
-                                skipCDDisplay = true
+                        -- When the spell has a runtime override on a non-buff bar,
+                        -- skip aura duration display so the override spell's actual
+                        -- cooldown is shown (e.g. 2min ability becomes 24s kick).
+                        if hasRuntimeOverride then
+                            auraHandled = false
+                        else
+                            local chargeInfo = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(resolvedID)
+                            local isChargeSid = chargeInfo ~= nil
+                            if auraID and (not isChargeSid or isBuffBarForOvr) then
+                                local ok, auraDurObj = pcall(C_UnitAuras.GetAuraDuration, auraUnit, auraID)
+                                if ok and auraDurObj then
+                                    ourIcon._cooldown:Clear()
+                                    pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, auraDurObj, true)
+                                    ourIcon._cooldown:SetReverse(false)
+                                    auraHandled = true
+                                    skipCDDisplay = true
+                                else
+                                    auraHandled = true
+                                end
                             else
                                 auraHandled = true
                             end
-                        else
-                            auraHandled = true
+                        end
+                    end
+
+                    -- Buff bar fallback for spells with no aura (e.g. summons):
+                    -- when the Blizzard CDM child is visible, the effect is active.
+                    -- Copy the child's cooldown state to show the effect duration.
+                    if not hasRuntimeOverride and not auraHandled then
+                        if isBuffBarForOvr then
+                            local blzFb = _tickBlizzAllChildCache[resolvedID] or _tickBlizzAllChildCache[spellID]
+                            if blzFb and blzFb:IsShown() then
+                                auraHandled = true
+                                skipCDDisplay = true
+                                -- Use the cached DurationObject captured by our hook
+                                -- to avoid secret-value arithmetic from GetCooldownTimes.
+                                local blzCD = blzFb.Cooldown
+                                if blzCD then
+                                    ourIcon._cooldown:Clear()
+                                    if blzFb._ecmeDurObj then
+                                        pcall(ourIcon._cooldown.SetCooldownFromDurationObject, ourIcon._cooldown, blzFb._ecmeDurObj, true)
+                                    elseif blzFb._ecmeRawStart and blzFb._ecmeRawDur then
+                                        pcall(ourIcon._cooldown.SetCooldown, ourIcon._cooldown, blzFb._ecmeRawStart, blzFb._ecmeRawDur)
+                                    end
+                                    ourIcon._cooldown:SetReverse(false)
+                                end
+                            end
                         end
                     end
                 end
@@ -3762,10 +3854,18 @@ local function UpdateTrackedBarIcons(barKey)
                 ourIcon:Show()
 
                 -- Hide buff icons when inactive
-                local isBuffBar = (barKey == "buffs" or barData.barType == "buffs")
-                if barData.hideBuffsWhenInactive and isBuffBar and not EllesmereUI._unlockActive
+                if barData.hideBuffsWhenInactive and isBuffBarForOvr and not EllesmereUI._unlockActive
                    and not (EllesmereUI._mainFrame and EllesmereUI._mainFrame:IsShown()) then
-                    if not (_tickBlizzActiveCache[resolvedID]) then
+                    local isActive = _tickBlizzActiveCache[resolvedID] or _tickBlizzActiveCache[spellID]
+                    -- Fallback: check if the Blizzard CDM child is visible
+                    -- (works for summons and other no-aura spells).
+                    if not isActive then
+                        local blzCh = _tickBlizzAllChildCache[resolvedID] or _tickBlizzAllChildCache[spellID]
+                        if blzCh and blzCh:IsShown() then
+                            isActive = true
+                        end
+                    end
+                    if not isActive then
                         ourIcon:Hide()
                     else
                         visCount = visCount + 1
@@ -3847,6 +3947,20 @@ local function UpdateAllCDMBars(dt)
                                     if sid and sid > 0 then
                                         _tickBlizzActiveCache[sid] = true
                                     end
+                                end
+                                -- Hook the child's Cooldown widget to capture DurationObjects
+                                -- when Blizzard sets them. Avoids secret-value arithmetic.
+                                if ch.Cooldown and not ch._ecmeHooked then
+                                    ch._ecmeHooked = true
+                                    if ch.Cooldown.SetCooldownFromDurationObject then
+                                        hooksecurefunc(ch.Cooldown, "SetCooldownFromDurationObject", function(_, durObj)
+                                            ch._ecmeDurObj = durObj
+                                        end)
+                                    end
+                                    hooksecurefunc(ch.Cooldown, "SetCooldown", function(_, start, dur)
+                                        ch._ecmeRawStart = start
+                                        ch._ecmeRawDur = dur
+                                    end)
                                 end
                             end
                         end

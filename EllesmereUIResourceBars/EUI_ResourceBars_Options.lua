@@ -382,6 +382,32 @@ initFrame:SetScript("OnEvent", function(self)
                     else
                         pip._fill:Hide()
                     end
+
+                    -- DK rune duration preview: show fake cooldown numbers on unfilled pips
+                    if cf == "DEATHKNIGHT" and sp.showText then
+                        if not pip._pvCdText then
+                            local overlay = CreateFrame("Frame", nil, pip)
+                            overlay:SetAllPoints(pip)
+                            overlay:SetFrameLevel(pip:GetFrameLevel() + 3)
+                            local fs = overlay:CreateFontString(nil, "OVERLAY")
+                            fs:SetPoint("CENTER", pip, "CENTER", 0, 0)
+                            fs:SetTextColor(1, 1, 1, 0.9)
+                            pip._pvCdText = fs
+                        end
+                        SetPVFont(pip._pvCdText, FONT_PATH, sp.textSize)
+                        if not active then
+                            -- Fake durations: higher numbers for pips further right
+                            local fakeDurations = { 2, 4, 7, 9, 10 }
+                            pip._pvCdText:SetText(tostring(fakeDurations[i] or ""))
+                            pip._pvCdText:Show()
+                        else
+                            pip._pvCdText:SetText("")
+                            pip._pvCdText:Hide()
+                        end
+                    elseif pip._pvCdText then
+                        pip._pvCdText:Hide()
+                    end
+
                     pip:Show()
                 end
                 for i = numPips + 1, #_previewFrames.pips do
@@ -443,8 +469,9 @@ initFrame:SetScript("OnEvent", function(self)
                 pc._pipBarBg:Hide()
             end
 
-            -- Count text (centered on bar)
-            if sp.showText and pc._countText then
+            -- Count text (centered on bar) — DK uses per-pip duration instead
+            local isDK = cf == "DEATHKNIGHT"
+            if sp.showText and pc._countText and not isDK then
                 SetPVFont(pc._countText, FONT_PATH, sp.textSize)
                 pc._countText:ClearAllPoints()
                 pc._countText:SetPoint("CENTER", pc, "CENTER", sp.textXOffset or 0, sp.textYOffset or 0)
@@ -1229,6 +1256,49 @@ initFrame:SetScript("OnEvent", function(self)
             swatch:HookScript("OnShow", UpdateClassSwDis)
             EllesmereUI.RegisterWidgetRefresh(UpdateClassSwDis)
             UpdateClassSwDis()
+        end
+        -- Inline cog for Charged Combo Point color
+        do
+            local rgn = classColorRow._leftRegion
+            local _, cogShow = EllesmereUI.BuildCogPopup({
+                title = "Charged Points",
+                rows = {
+                    { type = "colorpicker", label = "Charged Color", hasAlpha = false,
+                      get = function()
+                          local p = DB()
+                          if not p then return 0.44, 0.77, 1.00, 1 end
+                          return p.secondary.chargedR or 0.44, p.secondary.chargedG or 0.77,
+                                 p.secondary.chargedB or 1.00, p.secondary.chargedA or 1
+                      end,
+                      set = function(cr, cg, cb, ca)
+                          local p = DB(); if not p then return end
+                          p.secondary.chargedR, p.secondary.chargedG = cr, cg
+                          p.secondary.chargedB, p.secondary.chargedA = cb, ca
+                          RebuildClass(); SmoothRefresh()
+                      end },
+                },
+                footer = false,
+            })
+            local chargedCog = MakeCogBtn(rgn, cogShow)
+            local chargedCogDis = CreateFrame("Frame", nil, rgn)
+            chargedCogDis:SetAllPoints(chargedCog)
+            chargedCogDis:SetFrameLevel(chargedCog:GetFrameLevel() + 5)
+            chargedCogDis:EnableMouse(true)
+            chargedCogDis:SetScript("OnEnter", function()
+                EllesmereUI.ShowWidgetTooltip(chargedCog, EllesmereUI.DisabledTooltip("Enable Class Resource"))
+            end)
+            chargedCogDis:SetScript("OnLeave", function() EllesmereUI.HideWidgetTooltip() end)
+            local function UpdateChargedCogDis()
+                local p = DB()
+                if p and not p.secondary.enabled then
+                    chargedCogDis:Show(); chargedCog:SetAlpha(0.15)
+                else
+                    chargedCogDis:Hide(); chargedCog:SetAlpha(0.4)
+                end
+            end
+            chargedCog:HookScript("OnShow", UpdateChargedCogDis)
+            EllesmereUI.RegisterWidgetRefresh(UpdateChargedCogDis)
+            UpdateChargedCogDis()
         end
         -- Inline cog (RESIZE) on Resource Text for size + position
         do
