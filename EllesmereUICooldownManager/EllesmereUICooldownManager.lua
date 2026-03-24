@@ -295,14 +295,6 @@ local CDM_ITEM_PRESETS = {
         itemID   = 211756,
         altItemIDs = { 241304, 241305 },
     },
-    {
-        key            = "healthstone",
-        name           = "Healthstone",
-        icon           = 135230,
-        itemID         = 5512,
-        altItemIDs     = { 224464 },
-        noPotionsMenu  = true,  -- shown as a standalone menu entry, not in the Potions flyout
-    },
 }
 ns.CDM_ITEM_PRESETS = CDM_ITEM_PRESETS
 
