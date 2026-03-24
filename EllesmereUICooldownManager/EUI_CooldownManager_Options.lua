@@ -4277,6 +4277,69 @@ initFrame:SetScript("OnEvent", function(self)
                 end
             end
 
+            -- Healthstone (standalone entry; -5512 is canonical, altItemIDs handled via CDM_ITEM_PRESETS)
+            do
+                local HS_CANONICAL = -5512
+                local HS_ALT_NEG   = -224464
+                local isAdded = alreadyOnBar[HS_CANONICAL] or alreadyOnBar[HS_ALT_NEG]
+                local otherBarName = not isAdded and (usedOnOtherBar[HS_CANONICAL] or usedOnOtherBar[HS_ALT_NEG])
+                local hsNegID = HS_CANONICAL
+                local isDisabled = isAdded or otherBarName
+                local hsTex = C_Item.GetItemIconByID(5512) or 135230
+
+                local hi = CreateFrame("Button", nil, inner)
+                hi:SetHeight(ITEM_H)
+                hi:SetPoint("TOPLEFT", inner, "TOPLEFT", 1, -mH)
+                hi:SetPoint("TOPRIGHT", inner, "TOPRIGHT", -1, -mH)
+                hi:SetFrameLevel(menu:GetFrameLevel() + 2)
+
+                local hiLbl = hi:CreateFontString(nil, "OVERLAY")
+                hiLbl:SetFont(FONT_PATH, 11, GetCDMOptOutline())
+                hiLbl:SetPoint("LEFT", 10, 0)
+                hiLbl:SetJustifyH("LEFT")
+                hiLbl:SetText("Healthstone")
+
+                local hiIco = hi:CreateTexture(nil, "ARTWORK")
+                hiIco:SetSize(ITEM_H - 2, ITEM_H - 2)
+                hiIco:SetPoint("RIGHT", hi, "RIGHT", -6, 0)
+                hiIco:SetTexture(hsTex)
+                hiIco:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                if isDisabled then hiIco:SetDesaturated(true); hiIco:SetAlpha(0.4) end
+
+                local hiHl = hi:CreateTexture(nil, "ARTWORK")
+                hiHl:SetAllPoints(); hiHl:SetColorTexture(1, 1, 1, 0); hiHl:SetAlpha(0)
+
+                if isDisabled then
+                    hiLbl:SetTextColor(tDimR, tDimG, tDimB, tDimA * 0.4)
+                    local tooltipName = isAdded and (bd and (bd.name or bd.key) or barKey) or otherBarName
+                    hi:SetScript("OnEnter", function()
+                        EllesmereUI.ShowWidgetTooltip(hi, "Already on " .. tooltipName)
+                    end)
+                    hi:SetScript("OnLeave", function() EllesmereUI.HideWidgetTooltip() end)
+                else
+                    hiLbl:SetTextColor(tDimR, tDimG, tDimB, tDimA)
+                    hi:SetScript("OnEnter", function()
+                        hiLbl:SetTextColor(1, 1, 1, 1)
+                        hiHl:SetColorTexture(1, 1, 1, hlA); hiHl:SetAlpha(1)
+                    end)
+                    hi:SetScript("OnLeave", function()
+                        hiLbl:SetTextColor(tDimR, tDimG, tDimB, tDimA)
+                        hiHl:SetAlpha(0)
+                    end)
+                    hi:SetScript("OnClick", function()
+                        menu:Hide()
+                        EnsureAssignedSpells(barKey)
+                        ns.AddTrackedSpell(barKey, hsNegID)
+                        if ns.RebuildSpellRouteMap then ns.RebuildSpellRouteMap() end
+                        Refresh()
+                        if _cdmPreview and _cdmPreview.Update then _cdmPreview:Update() end
+                        UpdateCDMPreviewAndResize()
+                    end)
+                end
+                allItems[#allItems + 1] = hi
+                mH = mH + ITEM_H
+            end
+
             -- "Potions" flyout subnav
             local _potionsSub
             local itemPresets = ns.CDM_ITEM_PRESETS
@@ -4338,6 +4401,7 @@ initFrame:SetScript("OnEvent", function(self)
 
                     local subH = 4
                     for _, preset in ipairs(itemPresets) do
+                      if not preset.noPotionsMenu then
                         local pID = -(preset.itemID)
                         local isAdded = alreadyOnBar[pID]
                         local pOtherBar = not isAdded and usedOnOtherBar[pID]
@@ -4401,6 +4465,7 @@ initFrame:SetScript("OnEvent", function(self)
                             end)
                         end
                         subH = subH + SUB_ITEM_H
+                      end -- not noPotionsMenu
                     end
 
                     local totalSubH = subH + 4
