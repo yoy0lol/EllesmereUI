@@ -173,6 +173,26 @@ local defaults = {
             visHideNoTarget      = false,
             visHideNoEnemy       = false,
         },
+        encounterTimer = {
+            enabled           = true,
+            triggerMode       = "encounter",  -- "encounter" | "combat"
+            fontSize          = 28,
+            fontOutline       = "",           -- "" | "OUTLINE" | "THICKOUTLINE"
+            fontShadow        = true,
+            useClassColor     = false,
+            r                 = 1, g = 1, b = 1,
+            showBg            = true,
+            bgAlpha           = 0.5,
+            showEncounterName = false,
+            showWhenIdle      = false,
+            position          = nil,
+            visibility        = "always",
+            visOnlyInstances  = true,
+            visHideHousing    = false,
+            visHideMounted    = false,
+            visHideNoTarget   = false,
+            visHideNoEnemy    = false,
+        },
     },
 }
 
@@ -1763,6 +1783,13 @@ mouseoverPoll:SetScript("OnUpdate", function(_, dt)
     end
 end)
 
+-- Pre-allocated tables for mouseoverTargets (avoids creating new tables every call)
+local _moCache = {}
+local function _moEntry(f)
+    if not _moCache[f] then _moCache[f] = { frame = f } end
+    return _moCache[f]
+end
+
 local function RebuildMouseoverTargets()
     wipe(mouseoverTargets)
     if not EBS.db then return end
@@ -1770,19 +1797,19 @@ local function RebuildMouseoverTargets()
     -- Chat: use first skinned chat frame as hover anchor, apply alpha to all
     if not TEMP_DISABLED.chat and prof.chat and prof.chat.enabled and prof.chat.visibility == "mouseover" then
         for chatFrame in pairs(skinnedChatFrames) do
-            mouseoverTargets[#mouseoverTargets + 1] = { frame = chatFrame }
+            mouseoverTargets[#mouseoverTargets + 1] = _moEntry(chatFrame)
         end
     end
     -- Minimap
     if prof.minimap and prof.minimap.enabled and prof.minimap.visibility == "mouseover" then
         if Minimap then
-            mouseoverTargets[#mouseoverTargets + 1] = { frame = Minimap }
+            mouseoverTargets[#mouseoverTargets + 1] = _moEntry(Minimap)
         end
     end
     -- Friends
     if not TEMP_DISABLED.friends and prof.friends and prof.friends.enabled and prof.friends.visibility == "mouseover" then
         if FriendsFrame then
-            mouseoverTargets[#mouseoverTargets + 1] = { frame = FriendsFrame }
+            mouseoverTargets[#mouseoverTargets + 1] = _moEntry(FriendsFrame)
         end
     end
     if #mouseoverTargets > 0 then
@@ -1853,6 +1880,7 @@ local function AnyVisibilityActive()
     if not TEMP_DISABLED.friends and needs(prof.friends) then return true end
     if needs(prof.questTracker) then return true end
     if needs(prof.cursor) then return true end
+    if needs(prof.encounterTimer) then return true end
     return false
 end
 
@@ -1890,6 +1918,7 @@ local function UpdateAllVisibility()
     UpdateFriendsVisibility()
     if _G._EBS_UpdateQTVisibility then _G._EBS_UpdateQTVisibility() end
     if _G._ECL_UpdateVisibility then _G._ECL_UpdateVisibility() end
+    if _G._EBS_UpdateETVisibility then _G._EBS_UpdateETVisibility() end
     RebuildMouseoverTargets()
     UpdateVisEventRegistration()
 end

@@ -11,6 +11,7 @@ local PAGE_FRIENDS       = "Friends"
 local PAGE_QUEST_TRACKER = "Quest Tracker"
 local PAGE_CURSOR        = "Cursor"
 local PAGE_DMG_METERS    = "Damage Meters"
+local PAGE_ENCOUNTER_TIMER = "Encounter Timer"
 
 local SECTION_CHAT    = "CHAT"
 local SECTION_MINIMAP = "DISPLAY"
@@ -458,7 +459,7 @@ initFrame:SetScript("OnEvent", function(self)
     EllesmereUI:RegisterModule("EllesmereUIBasics", {
         title       = "Basics",
         description = "Lightweight skins for all major Blizzard UI objects.",
-        pages       = { PAGE_CURSOR, PAGE_DMG_METERS, PAGE_QUEST_TRACKER, PAGE_FRIENDS, PAGE_CHAT, PAGE_MINIMAP },
+        pages       = { PAGE_CURSOR, PAGE_DMG_METERS, PAGE_QUEST_TRACKER, PAGE_FRIENDS, PAGE_CHAT, PAGE_MINIMAP, PAGE_ENCOUNTER_TIMER },
         disabledPages = { PAGE_DMG_METERS, PAGE_CHAT, PAGE_FRIENDS },
         disabledPageTooltips = { [PAGE_DMG_METERS] = "Coming Soon", [PAGE_CHAT] = "Coming Soon", [PAGE_FRIENDS] = "Coming Soon" },
         buildPage   = function(pageName, parent, yOffset)
@@ -471,6 +472,9 @@ initFrame:SetScript("OnEvent", function(self)
             if pageName == PAGE_CURSOR and _G._EBS_BuildCursorPage then
                 return _G._EBS_BuildCursorPage(pageName, parent, yOffset)
             end
+            if pageName == PAGE_ENCOUNTER_TIMER and _G._EBS_BuildEncounterTimerPage then
+                return _G._EBS_BuildEncounterTimerPage(pageName, parent, yOffset)
+            end
         end,
         onReset = function()
             if _G._EBS_AceDB then
@@ -478,6 +482,7 @@ initFrame:SetScript("OnEvent", function(self)
             end
             if _G._EBS_ResetCursor then _G._EBS_ResetCursor() end
             if _G._EBS_ResetQuestTracker then _G._EBS_ResetQuestTracker() end
+            if _G._EBS_ApplyEncounterTimer then _G._EBS_ApplyEncounterTimer() end
             EllesmereUI:InvalidatePageCache()
             RefreshAll()
         end,

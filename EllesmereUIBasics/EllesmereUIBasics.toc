@@ -4,7 +4,7 @@
 ## Group: EllesmereUI
 ## Notes: Chat, Minimap, Friends List, Quest Tracker, and Cursor skinning
 ## Author: Ellesmere
-## Version: 5.5
+## Version: 5.6.5
 ## Dependencies: EllesmereUI
 ## SavedVariables: EllesmereUIBasicsDB
 ## IconTexture: Interface\AddOns\EllesmereUI\media\eg-logo.tga
@@ -14,9 +14,11 @@ EllesmereUIBasics.lua
 EllesmereUIBasics_Chat.lua
 EllesmereUIBasics_QuestTracker.lua
 EllesmereUIBasics_Cursor.lua
+EllesmereUIBasics_EncounterTimer.lua
 
 # Options
 EUI_Basics_Chat_Options.lua
 EUI_Basics_QuestTracker_Options.lua
 EUI_Basics_Cursor_Options.lua
+EUI_Basics_EncounterTimer_Options.lua
 EUI_Basics_Options.lua
